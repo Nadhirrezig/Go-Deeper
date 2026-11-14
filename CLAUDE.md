@@ -49,7 +49,7 @@ vipgroup-app/                 pnpm workspace
 - **studio** is never deployed publicly. It runs on the office LAN (`next start -H 0.0.0.0`, kept alive with pm2).
 - **converter** runs inside studio (server side) and from the CLI. Heavy work stays on the office machine.
 - **flipbook** must work in any React 18/19 + Next.js app without the host's Tailwind config. It is consumed by studio (preview) and by goexperience.travel (installed as a private package from GitHub Packages — set up in step 7).
-- Public files (images, PDF, `manifest.json`, `search.json`) live in cloud storage behind a CDN (step 6). Until then, they live in a local folder (`./storage/flipbooks/<id>/`).
+- Book files (images, PDF, `manifest.json`, `search.json`) go to the private Cloudflare R2 bucket used by goexperience.travel, which serves them through its own `/api/r2` route (step 6, see notes below). Until then, they live in a local folder (`./storage/flipbooks/<id>/`).
 
 ### Book output format (contract between converter and reader)
 
@@ -82,11 +82,33 @@ export interface FlipbookManifest {
 ```
 All paths in the manifest are relative to the manifest's own URL. The reader resolves them against a `baseUrl`. Change this contract only when a step says so.
 
-## Notes for step 6
+## Notes for step 6 — storage decided: Cloudflare R2, private bucket ("option A")
 
-- Upload `original.pdf` with `Content-Disposition: attachment; filename="<slug>.pdf"`. The reader's
-  Download button is a plain link with a `download` attribute, which browsers ignore on
-  cross-origin URLs (the CDN): this header is what names the file and forces the download there.
+- Use the existing R2 bucket `goexperience` (the one goexperience.travel already uses). It stays
+  private: no public access, no r2.dev address, no custom domain, no CORS rule.
+- Each book goes to `flipbooks/<id>/` with exactly the "Book output format" layout above. Upload
+  every file with its Content-Type (`application/json`, `image/webp`, `application/pdf`).
+- The studio writes with its own R2 API token: "Object Read & Write", limited to the `goexperience`
+  bucket. Nadhir creates it in the Cloudflare dashboard (R2 → Manage API tokens); the keys live only
+  in the office PC's `.env` (variable names in `.env.example`), never in chat or in git.
+- Signing: goexperience's `src/lib/r2.ts` signs R2 requests (SigV4) with `node:crypto` only. Reuse
+  that approach for PUT / DELETE if possible; ask before adding an S3 SDK.
+- The Cloudflare connector ("Developer Platform") can list and inspect buckets, but cannot upload
+  files, create tokens or change bucket settings.
+
+## Notes for step 7 — goexperience.travel (repo `Nadhirrezig/Go-expereince-Travel`)
+
+- Next.js 16 + React 19 + next-intl, deployed on Vercel. It reads the private bucket through
+  `src/app/api/r2/[...key]/route.ts` (signed GET), which today allows only `journeys/` and images.
+- Extend that route for `flipbooks/`: allow `.json`, `.webp`, `.pdf`, keep the `..` check; cache
+  pages and the PDF as immutable; send `original.pdf` with
+  `Content-Disposition: attachment; filename="<slug>.pdf"`.
+- The reader uses same-origin URLs: `<Flipbook manifestUrl="/api/r2/flipbooks/<id>/manifest.json" />`.
+  No CORS is needed, and the Download button's `download` attribute works (same origin).
+- The site's existing read token already covers `flipbooks/` (R2 tokens apply to a whole bucket).
+- Leave `NEXT_PUBLIC_R2_PUBLIC_BASE_URL` unset: it would make the site expect a public bucket.
+- Trade-off of a private bucket: every page image passes through a Vercel function. Check that
+  Vercel caches these responses (each image fetched from R2 once), and watch Vercel usage after launch.
 
 ## Stack and approved dependencies
 
