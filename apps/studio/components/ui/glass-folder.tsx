@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 
 /**
  * Glass Folder Cards — a folder you can actually use, drawn as an object.
@@ -35,112 +35,112 @@ import * as React from "react"
  *   the folders to create a new one.
  */
 
-export type ArtPreset = "aurora" | "ember" | "dusk" | "glacier" | "verdant"
+export type ArtPreset = "aurora" | "ember" | "dusk" | "glacier" | "verdant";
 
 export type ArtRecipe = {
   /** `marble` folds the colours through each other; `streak` pulls them into a long exposure. */
-  style: "marble" | "streak"
+  style: "marble" | "streak";
   /** Two or more colours, in the order they appear through the field. */
-  colors: string[]
+  colors: string[];
   /** Size of the forms. Lower is larger and calmer. */
-  scale?: number
+  scale?: number;
   /** How hard the field folds into itself. */
-  warp?: number
+  warp?: number;
   /** Direction of the flow, in radians. */
-  angle?: number
+  angle?: number;
   /** Specular highlight on the liquid surface, 0–1. */
-  gloss?: number
+  gloss?: number;
   /** Dark veins along the folds, 0–1. */
-  veins?: number
-}
+  veins?: number;
+};
 
-export type FolderArt = ArtPreset | ArtRecipe | "none"
+export type FolderArt = ArtPreset | ArtRecipe | "none";
 
 export type FolderFile = {
   /** Stable identity. Give one when the list changes over time, so sheets are kept and only new files drop in. */
-  id?: string
-  name: string
+  id?: string;
+  name: string;
   /** A short second line: a size, a date, a kind. */
-  meta?: string
+  meta?: string;
   /** Makes the file a picture: a generated artwork… */
-  art?: ArtPreset | ArtRecipe
+  art?: ArtPreset | ArtRecipe;
   /** …or an image of your own. Without either, the file is a sheet of paper. */
-  image?: string
+  image?: string;
   /** Rendered as a link when the folder is open. */
-  href?: string
-}
+  href?: string;
+};
 
 export type FolderMenuItem = {
-  label: string
-  onSelect?: () => void
+  label: string;
+  onSelect?: () => void;
   /** Drawn in red, for the one you would want to think twice about. */
-  danger?: boolean
-}
+  danger?: boolean;
+};
 
 export type GlassFolderProps = {
-  label?: string
+  label?: string;
   /** The second line. Defaults to the number of files, which rolls as you add. */
-  meta?: string
+  meta?: string;
   /** `light` is milk glass, `dark` is smoked glass. */
-  tone?: "light" | "dark"
+  tone?: "light" | "dark";
   /** What the back panel holds. A preset, your own recipe, or `none` for a plain frosted back. */
-  art?: FolderArt
+  art?: FolderArt;
   /** A different arrangement of the same recipe. */
-  seed?: number
+  seed?: number;
   /** Your own picture for the back panel, instead of generated art. */
-  image?: string
+  image?: string;
   /**
    * The folder's contents. When the content of this prop changes, the folder
    * follows it (new files drop in). Files added with `+` stay local until the
    * prop changes.
    */
-  files?: FolderFile[]
+  files?: FolderFile[];
   /** UI and screen-reader text. Missing keys fall back to French. */
-  labels?: Partial<GlassFolderLabels>
+  labels?: Partial<GlassFolderLabels>;
   /** `add` drops new files in, `more` opens a menu, `none` hides the key. */
-  action?: "add" | "more" | "none"
+  action?: "add" | "more" | "none";
   /** What `add` puts in the folder. Return nothing for an "Untitled" sheet. */
-  onAdd?: (files: FolderFile[]) => FolderFile | void
-  onFilesChange?: (files: FolderFile[]) => void
+  onAdd?: (files: FolderFile[]) => FolderFile | void;
+  onFilesChange?: (files: FolderFile[]) => void;
   /** Items for the `more` menu. An Open / Close item is always first. */
-  menu?: FolderMenuItem[]
+  menu?: FolderMenuItem[];
   /** Where the label sits on the front panel. */
-  labelPlacement?: "bottom-left" | "top-left" | "top-right"
-  open?: boolean
-  defaultOpen?: boolean
-  onOpenChange?: (open: boolean) => void
+  labelPlacement?: "bottom-left" | "top-left" | "top-right";
+  open?: boolean;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
   /** Called when a file is chosen while the folder is open. */
-  onFileSelect?: (file: FolderFile, index: number) => void
+  onFileSelect?: (file: FolderFile, index: number) => void;
   /** Width in px. Everything else scales with it; the height is 0.96 × width. */
-  width?: number
+  width?: number;
   /** Assemble itself the first time it scrolls into view. */
-  appear?: boolean
+  appear?: boolean;
   /** Delay before that entrance, in ms — for staggering a row of folders. */
-  appearDelay?: number
-  className?: string
-  style?: React.CSSProperties
-}
+  appearDelay?: number;
+  className?: string;
+  style?: React.CSSProperties;
+};
 
 export type GlassFolderLabels = {
   /** First item of the `···` menu. */
-  openFolder: string
-  closeFolder: string
+  openFolder: string;
+  closeFolder: string;
   /** Start of the folder button's accessible name: "<open> <label>, <count>". */
-  open: string
-  close: string
+  open: string;
+  close: string;
   /** The count line under the label, and in the accessible name. */
-  count: (n: number) => string
+  count: (n: number) => string;
   /** Accessible name of the `+` key: "<addFile> <label>". */
-  addFile: string
+  addFile: string;
   /** Accessible name of the `···` key: "<moreOptions> <label>". */
-  moreOptions: string
+  moreOptions: string;
   /** Accessible name of the file list: "<contents> <label>". */
-  contents: string
+  contents: string;
   /** Accessible name of the menu: "<options> <label>". */
-  options: string
+  options: string;
   /** Name of a file added with `+` when `onAdd` returns nothing. */
-  untitled: string
-}
+  untitled: string;
+};
 
 export const GLASS_FOLDER_LABELS_FR: GlassFolderLabels = {
   openFolder: "Ouvrir le dossier",
@@ -153,7 +153,7 @@ export const GLASS_FOLDER_LABELS_FR: GlassFolderLabels = {
   contents: "Contenu de",
   options: "Options de",
   untitled: "Sans titre",
-}
+};
 
 export const GLASS_FOLDER_LABELS_EN: GlassFolderLabels = {
   openFolder: "Open folder",
@@ -166,7 +166,7 @@ export const GLASS_FOLDER_LABELS_EN: GlassFolderLabels = {
   contents: "Contents of",
   options: "Options for",
   untitled: "Untitled",
-}
+};
 
 // #region art
 export const ART_PRESETS: Record<ArtPreset, ArtRecipe> = {
@@ -220,95 +220,95 @@ export const ART_PRESETS: Record<ArtPreset, ArtRecipe> = {
     gloss: 0.5,
     veins: 0.5,
   },
-}
+};
 
 /** `#rgb` or `#rrggbb` to a triple. Anything unreadable comes back mid-grey. */
 export function hexToRgb(hex: string): [number, number, number] {
-  let h = hex.trim().replace(/^#/, "")
-  if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2]
-  const n = /^[0-9a-f]{6}$/i.test(h) ? parseInt(h, 16) : 0x808080
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+  let h = hex.trim().replace(/^#/, "");
+  if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+  const n = /^[0-9a-f]{6}$/i.test(h) ? parseInt(h, 16) : 0x808080;
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
 /** A small, fast, seedable PRNG (mulberry32). */
 export function rng(seed: number): () => number {
-  let a = seed >>> 0
+  let a = seed >>> 0;
   return () => {
-    a = (a + 0x6d2b79f5) >>> 0
-    let t = a
-    t = Math.imul(t ^ (t >>> 15), t | 1)
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
 /** A stable small integer for a string, so a file's art follows its name. */
 export function hashString(s: string): number {
-  let h = 2166136261
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619)
-  return h >>> 0
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return h >>> 0;
 }
 
 /** Seeded gradient noise, summed into fractal octaves with a rotation between each. */
 function makeFbm(seed: number): (x: number, y: number, octaves: number) => number {
-  const r = rng(seed)
-  const perm = new Uint8Array(512)
-  const grad = new Float32Array(512)
-  const p: number[] = []
-  for (let i = 0; i < 256; i++) p.push(i)
+  const r = rng(seed);
+  const perm = new Uint8Array(512);
+  const grad = new Float32Array(512);
+  const p: number[] = [];
+  for (let i = 0; i < 256; i++) p.push(i);
   for (let i = 255; i > 0; i--) {
-    const j = Math.floor(r() * (i + 1))
-    const t = p[i]
-    p[i] = p[j]
-    p[j] = t
+    const j = Math.floor(r() * (i + 1));
+    const t = p[i];
+    p[i] = p[j];
+    p[j] = t;
   }
-  for (let i = 0; i < 512; i++) perm[i] = p[i & 255]
+  for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
   for (let i = 0; i < 256; i++) {
-    const a = r() * Math.PI * 2
-    grad[i * 2] = Math.cos(a)
-    grad[i * 2 + 1] = Math.sin(a)
+    const a = r() * Math.PI * 2;
+    grad[i * 2] = Math.cos(a);
+    grad[i * 2 + 1] = Math.sin(a);
   }
   const noise = (x: number, y: number): number => {
-    const xi = Math.floor(x)
-    const yi = Math.floor(y)
-    const xf = x - xi
-    const yf = y - yi
-    const X = xi & 255
-    const Y = yi & 255
-    const h00 = perm[X + perm[Y]] * 2
-    const h10 = perm[X + 1 + perm[Y]] * 2
-    const h01 = perm[X + perm[Y + 1]] * 2
-    const h11 = perm[X + 1 + perm[Y + 1]] * 2
-    const d00 = grad[h00] * xf + grad[h00 + 1] * yf
-    const d10 = grad[h10] * (xf - 1) + grad[h10 + 1] * yf
-    const d01 = grad[h01] * xf + grad[h01 + 1] * (yf - 1)
-    const d11 = grad[h11] * (xf - 1) + grad[h11 + 1] * (yf - 1)
-    const u = xf * xf * xf * (xf * (xf * 6 - 15) + 10)
-    const v = yf * yf * yf * (yf * (yf * 6 - 15) + 10)
-    return d00 + u * (d10 - d00) + v * (d01 - d00 + u * (d11 - d01 - d10 + d00))
-  }
+    const xi = Math.floor(x);
+    const yi = Math.floor(y);
+    const xf = x - xi;
+    const yf = y - yi;
+    const X = xi & 255;
+    const Y = yi & 255;
+    const h00 = perm[X + perm[Y]] * 2;
+    const h10 = perm[X + 1 + perm[Y]] * 2;
+    const h01 = perm[X + perm[Y + 1]] * 2;
+    const h11 = perm[X + 1 + perm[Y + 1]] * 2;
+    const d00 = grad[h00] * xf + grad[h00 + 1] * yf;
+    const d10 = grad[h10] * (xf - 1) + grad[h10 + 1] * yf;
+    const d01 = grad[h01] * xf + grad[h01 + 1] * (yf - 1);
+    const d11 = grad[h11] * (xf - 1) + grad[h11 + 1] * (yf - 1);
+    const u = xf * xf * xf * (xf * (xf * 6 - 15) + 10);
+    const v = yf * yf * yf * (yf * (yf * 6 - 15) + 10);
+    return d00 + u * (d10 - d00) + v * (d01 - d00 + u * (d11 - d01 - d10 + d00));
+  };
   return (x, y, octaves) => {
-    let sum = 0
-    let amp = 0.5
+    let sum = 0;
+    let amp = 0.5;
     for (let i = 0; i < octaves; i++) {
-      sum += amp * noise(x, y)
-      const nx = 1.6 * x + 1.2 * y + 7.1
-      y = -1.2 * x + 1.6 * y + 3.3
-      x = nx
-      amp *= 0.5
+      sum += amp * noise(x, y);
+      const nx = 1.6 * x + 1.2 * y + 7.1;
+      y = -1.2 * x + 1.6 * y + 3.3;
+      x = nx;
+      amp *= 0.5;
     }
-    return sum
-  }
+    return sum;
+  };
 }
 
 export type ArtJob = {
-  width: number
-  height: number
+  width: number;
+  height: number;
   /** RGBA, ready for `new ImageData(pixels, width, height)`. */
-  pixels: Uint8ClampedArray
+  pixels: Uint8ClampedArray;
   /** Paint up to `rows` more rows. Returns true once the picture is finished. */
-  step: (rows: number) => boolean
-}
+  step: (rows: number) => boolean;
+};
 
 /**
  * The artwork, as a job that can be spread over several frames.
@@ -321,189 +321,212 @@ export type ArtJob = {
  * the coordinates along one axis first, which turns the same folds into a
  * long-exposure smear.
  */
-export function createArtJob(width: number, height: number, recipe: ArtRecipe, seed: number): ArtJob {
-  const w = Math.max(1, Math.round(width))
-  const h = Math.max(1, Math.round(height))
-  const colors = recipe.colors.length >= 2 ? recipe.colors : ["#111111", "#eeeeee"]
-  const stops = colors.map((c, i) => ({ t: i / (colors.length - 1), c: hexToRgb(c) }))
-  const scale = recipe.scale ?? 0.7
-  const warp = recipe.warp ?? 3
-  const gloss = recipe.gloss ?? 0.4
-  const veins = recipe.veins ?? 0
-  const streak = recipe.style === "streak"
-  const fbm = makeFbm(seed * 977 + 13)
-  const r = rng(seed + 1)
-  const ox = r() * 50
-  const oy = r() * 50
-  const angle = (recipe.angle ?? 0) + (r() - 0.5) * 0.5
-  const ca = Math.cos(angle)
-  const sa = Math.sin(angle)
-  const m = Math.min(w, h)
+export function createArtJob(
+  width: number,
+  height: number,
+  recipe: ArtRecipe,
+  seed: number,
+): ArtJob {
+  const w = Math.max(1, Math.round(width));
+  const h = Math.max(1, Math.round(height));
+  const colors = recipe.colors.length >= 2 ? recipe.colors : ["#111111", "#eeeeee"];
+  const stops = colors.map((c, i) => ({ t: i / (colors.length - 1), c: hexToRgb(c) }));
+  const scale = recipe.scale ?? 0.7;
+  const warp = recipe.warp ?? 3;
+  const gloss = recipe.gloss ?? 0.4;
+  const veins = recipe.veins ?? 0;
+  const streak = recipe.style === "streak";
+  const fbm = makeFbm(seed * 977 + 13);
+  const r = rng(seed + 1);
+  const ox = r() * 50;
+  const oy = r() * 50;
+  const angle = (recipe.angle ?? 0) + (r() - 0.5) * 0.5;
+  const ca = Math.cos(angle);
+  const sa = Math.sin(angle);
+  const m = Math.min(w, h);
   // The field is sampled on a half-resolution grid (with a one-cell apron) and
   // brought up with Catmull-Rom, which keeps the slope continuous for the
   // lighting: a quarter of the noise for no visible loss.
-  const gw = Math.ceil(w / 2) + 3
-  const gh = Math.ceil(h / 2) + 3
-  const G = new Float32Array(gw * gh)
-  const GQ = new Float32Array(gw * gh)
-  const F = new Float32Array(w * h)
-  const Q = new Float32Array(w * h)
-  const pixels = new Uint8ClampedArray(w * h * 4)
-  let row = 0
+  const gw = Math.ceil(w / 2) + 3;
+  const gh = Math.ceil(h / 2) + 3;
+  const G = new Float32Array(gw * gh);
+  const GQ = new Float32Array(gw * gh);
+  const F = new Float32Array(w * h);
+  const Q = new Float32Array(w * h);
+  const pixels = new Uint8ClampedArray(w * h * 4);
+  let row = 0;
 
   const field = (gy: number) => {
     for (let gx = 0; gx < gw; gx++) {
-      const u = ((gx - 1) * 2 - w / 2) / m
-      const v = ((gy - 1) * 2 - h / 2) / m
-      let px = (u * ca - v * sa) * scale
-      let py = (u * sa + v * ca) * scale
+      const u = ((gx - 1) * 2 - w / 2) / m;
+      const v = ((gy - 1) * 2 - h / 2) / m;
+      let px = (u * ca - v * sa) * scale;
+      let py = (u * sa + v * ca) * scale;
       if (streak) {
-        px *= 0.14
-        py *= 2.2
+        px *= 0.14;
+        py *= 2.2;
       }
-      px += ox
-      py += oy
-      const qx = fbm(px, py, 3)
-      const qy = fbm(px + 5.2, py + 1.3, 3)
-      const rx = fbm(px + warp * qx + 1.7, py + warp * qy + 9.2, 3)
-      const ry = fbm(px + warp * qx + 8.3, py + warp * qy + 2.8, 3)
-      G[gy * gw + gx] = fbm(px + warp * rx, py + warp * ry, 4)
-      GQ[gy * gw + gx] = Math.sqrt(qx * qx + qy * qy)
+      px += ox;
+      py += oy;
+      const qx = fbm(px, py, 3);
+      const qy = fbm(px + 5.2, py + 1.3, 3);
+      const rx = fbm(px + warp * qx + 1.7, py + warp * qy + 9.2, 3);
+      const ry = fbm(px + warp * qx + 8.3, py + warp * qy + 2.8, 3);
+      G[gy * gw + gx] = fbm(px + warp * rx, py + warp * ry, 4);
+      GQ[gy * gw + gx] = Math.sqrt(qx * qx + qy * qy);
     }
-  }
+  };
 
   const upsample = () => {
     // pixel x sits on grid column x/2 + 1: either exactly on a sample, or halfway
-    const cr = (a: number, b: number, c: number, d: number) => (-a + 9 * b + 9 * c - d) / 16
-    const T = new Float32Array(w * gh)
+    const cr = (a: number, b: number, c: number, d: number) => (-a + 9 * b + 9 * c - d) / 16;
+    const T = new Float32Array(w * gh);
     for (let gy = 0; gy < gh; gy++) {
-      const r = gy * gw
+      const r = gy * gw;
       for (let x = 0; x < w; x++) {
-        const c = (x >> 1) + 1
-        T[gy * w + x] = x & 1 ? cr(G[r + c - 1], G[r + c], G[r + c + 1], G[r + c + 2]) : G[r + c]
+        const c = (x >> 1) + 1;
+        T[gy * w + x] = x & 1 ? cr(G[r + c - 1], G[r + c], G[r + c + 1], G[r + c + 2]) : G[r + c];
       }
     }
     for (let y = 0; y < h; y++) {
-      const c = (y >> 1) + 1
+      const c = (y >> 1) + 1;
       for (let x = 0; x < w; x++) {
         F[y * w + x] =
-          y & 1 ? cr(T[(c - 1) * w + x], T[c * w + x], T[(c + 1) * w + x], T[(c + 2) * w + x]) : T[c * w + x]
-        const gx = (x >> 1) + 1
-        const q0 = GQ[c * gw + gx]
-        const qx = x & 1 ? (q0 + GQ[c * gw + gx + 1]) / 2 : q0
-        const q1 = y & 1 ? (x & 1 ? (GQ[(c + 1) * gw + gx] + GQ[(c + 1) * gw + gx + 1]) / 2 : GQ[(c + 1) * gw + gx]) : qx
-        Q[y * w + x] = (qx + q1) / 2
+          y & 1
+            ? cr(T[(c - 1) * w + x], T[c * w + x], T[(c + 1) * w + x], T[(c + 2) * w + x])
+            : T[c * w + x];
+        const gx = (x >> 1) + 1;
+        const q0 = GQ[c * gw + gx];
+        const qx = x & 1 ? (q0 + GQ[c * gw + gx + 1]) / 2 : q0;
+        const q1 =
+          y & 1
+            ? x & 1
+              ? (GQ[(c + 1) * gw + gx] + GQ[(c + 1) * gw + gx + 1]) / 2
+              : GQ[(c + 1) * gw + gx]
+            : qx;
+        Q[y * w + x] = (qx + q1) / 2;
       }
     }
-  }
+  };
 
   const colorize = () => {
     // percentiles from a sample, not a full sort: cheap and just as stable
-    const sample: number[] = []
-    const stride = Math.max(1, Math.floor(F.length / 4096))
-    for (let i = 0; i < F.length; i += stride) sample.push(F[i])
-    sample.sort((a, b) => a - b)
-    const lo = sample[Math.floor(sample.length * 0.02)]
-    const hi = sample[Math.floor(sample.length * 0.98)]
-    const k = 1 / (hi - lo || 1)
-    const lx = -0.55
-    const ly = -0.65
-    const lz = 0.52
-    const slope = k * m * 0.012
+    const sample: number[] = [];
+    const stride = Math.max(1, Math.floor(F.length / 4096));
+    for (let i = 0; i < F.length; i += stride) sample.push(F[i]);
+    sample.sort((a, b) => a - b);
+    const lo = sample[Math.floor(sample.length * 0.02)];
+    const hi = sample[Math.floor(sample.length * 0.98)];
+    const k = 1 / (hi - lo || 1);
+    const lx = -0.55;
+    const ly = -0.65;
+    const lz = 0.52;
+    const slope = k * m * 0.012;
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
-        const i = y * w + x
-        let t = (F[i] - lo) * k
-        t = t < 0 ? 0 : t > 1 ? 1 : t
-        let j = 1
-        while (j < stops.length - 1 && stops[j].t < t) j++
-        const a = stops[j - 1]
-        const b = stops[j]
-        let f = (t - a.t) / (b.t - a.t || 1)
-        f = f < 0 ? 0 : f > 1 ? 1 : f
-        f = f * f * (3 - 2 * f)
-        const gx = (F[x < w - 1 ? i + 1 : i] - F[x > 0 ? i - 1 : i]) * slope
-        const gy = (F[y < h - 1 ? i + w : i] - F[y > 0 ? i - w : i]) * slope
-        const nd = (-gx * lx - gy * ly + lz) / Math.sqrt(gx * gx + gy * gy + 1)
-        const spec = Math.pow(nd > 0 ? nd : 0, 24) * gloss * 255
-        const silk = 1 + 0.035 * Math.sin(t * 150 + Q[i] * 24)
-        const vein = veins * Math.max(0, 1 - Math.abs(Q[i] - 0.42) * 14) * 0.6
-        const lit = (0.82 + 0.28 * nd) * silk * (1 - vein)
-        pixels[i * 4] = (a.c[0] + (b.c[0] - a.c[0]) * f) * lit + spec
-        pixels[i * 4 + 1] = (a.c[1] + (b.c[1] - a.c[1]) * f) * lit + spec
-        pixels[i * 4 + 2] = (a.c[2] + (b.c[2] - a.c[2]) * f) * lit + spec
-        pixels[i * 4 + 3] = 255
+        const i = y * w + x;
+        let t = (F[i] - lo) * k;
+        t = t < 0 ? 0 : t > 1 ? 1 : t;
+        let j = 1;
+        while (j < stops.length - 1 && stops[j].t < t) j++;
+        const a = stops[j - 1];
+        const b = stops[j];
+        let f = (t - a.t) / (b.t - a.t || 1);
+        f = f < 0 ? 0 : f > 1 ? 1 : f;
+        f = f * f * (3 - 2 * f);
+        const gx = (F[x < w - 1 ? i + 1 : i] - F[x > 0 ? i - 1 : i]) * slope;
+        const gy = (F[y < h - 1 ? i + w : i] - F[y > 0 ? i - w : i]) * slope;
+        const nd = (-gx * lx - gy * ly + lz) / Math.sqrt(gx * gx + gy * gy + 1);
+        const spec = Math.pow(nd > 0 ? nd : 0, 24) * gloss * 255;
+        const silk = 1 + 0.035 * Math.sin(t * 150 + Q[i] * 24);
+        const vein = veins * Math.max(0, 1 - Math.abs(Q[i] - 0.42) * 14) * 0.6;
+        const lit = (0.82 + 0.28 * nd) * silk * (1 - vein);
+        pixels[i * 4] = (a.c[0] + (b.c[0] - a.c[0]) * f) * lit + spec;
+        pixels[i * 4 + 1] = (a.c[1] + (b.c[1] - a.c[1]) * f) * lit + spec;
+        pixels[i * 4 + 2] = (a.c[2] + (b.c[2] - a.c[2]) * f) * lit + spec;
+        pixels[i * 4 + 3] = 255;
       }
     }
-  }
+  };
 
   const step = (rows: number): boolean => {
-    if (row >= gh) return true
-    const end = Math.min(gh, row + Math.max(1, rows))
-    while (row < end) field(row++)
-    if (row < gh) return false
-    upsample()
-    colorize()
-    return true
-  }
+    if (row >= gh) return true;
+    const end = Math.min(gh, row + Math.max(1, rows));
+    while (row < end) field(row++);
+    if (row < gh) return false;
+    upsample();
+    colorize();
+    return true;
+  };
 
-  return { width: w, height: h, pixels, step }
+  return { width: w, height: h, pixels, step };
 }
 
 /** Where a file sits in the fan: -1 … 1 across the visible stack, 0 for one file. */
 export function fanSlot(index: number, count: number): number {
-  return count <= 1 ? 0 : (index / (count - 1)) * 2 - 1
+  return count <= 1 ? 0 : (index / (count - 1)) * 2 - 1;
 }
 // #endregion
 
-const recipeOf = (art: ArtPreset | ArtRecipe): ArtRecipe => (typeof art === "string" ? ART_PRESETS[art] : art)
+const recipeOf = (art: ArtPreset | ArtRecipe): ArtRecipe =>
+  typeof art === "string" ? ART_PRESETS[art] : art;
 
 // ---------------------------------------------------------------------------
 // One shared painter: every folder on the page queues its art here and the
 // queue spends a few milliseconds a frame, so a row of folders never janks.
 
-type Painted = HTMLCanvasElement
-const artCache = new Map<string, Promise<Painted>>()
-const queue: { job: ArtJob; priority: number; done: (c: Painted) => void }[] = []
-let pumping = false
+type Painted = HTMLCanvasElement;
+const artCache = new Map<string, Promise<Painted>>();
+const queue: { job: ArtJob; priority: number; done: (c: Painted) => void }[] = [];
+let pumping = false;
 
 function pump() {
-  if (pumping) return
-  pumping = true
+  if (pumping) return;
+  pumping = true;
   const tick = () => {
-    const until = performance.now() + 7
+    const until = performance.now() + 7;
     while (queue.length && performance.now() < until) {
-      const head = queue[0]
+      const head = queue[0];
       if (head.job.step(4)) {
-        queue.shift()
-        const c = document.createElement("canvas")
-        c.width = head.job.width
-        c.height = head.job.height
-        c.getContext("2d")?.putImageData(new ImageData(head.job.pixels as Uint8ClampedArray<ArrayBuffer>, c.width, c.height), 0, 0)
-        head.done(c)
+        queue.shift();
+        const c = document.createElement("canvas");
+        c.width = head.job.width;
+        c.height = head.job.height;
+        c.getContext("2d")?.putImageData(
+          new ImageData(head.job.pixels as Uint8ClampedArray<ArrayBuffer>, c.width, c.height),
+          0,
+          0,
+        );
+        head.done(c);
       }
     }
-    if (queue.length) requestAnimationFrame(tick)
-    else pumping = false
-  }
-  requestAnimationFrame(tick)
+    if (queue.length) requestAnimationFrame(tick);
+    else pumping = false;
+  };
+  requestAnimationFrame(tick);
 }
 
 /** Lower priority paints first: back panels (0) before the files tucked behind glass (1). */
-function paint(recipe: ArtRecipe, seed: number, w: number, h: number, priority: number): Promise<Painted> {
-  const key = JSON.stringify([recipe, seed, w, h])
-  let p = artCache.get(key)
+function paint(
+  recipe: ArtRecipe,
+  seed: number,
+  w: number,
+  h: number,
+  priority: number,
+): Promise<Painted> {
+  const key = JSON.stringify([recipe, seed, w, h]);
+  let p = artCache.get(key);
   if (!p) {
     p = new Promise<Painted>((done) => {
       // never jump the job already in progress
-      let at = queue.length
-      while (at > 1 && queue[at - 1].priority > priority) at--
-      queue.splice(at, 0, { job: createArtJob(w, h, recipe, seed), priority, done })
-      pump()
-    })
-    artCache.set(key, p)
+      let at = queue.length;
+      while (at > 1 && queue[at - 1].priority > priority) at--;
+      queue.splice(at, 0, { job: createArtJob(w, h, recipe, seed), priority, done });
+      pump();
+    });
+    artCache.set(key, p);
   }
-  return p
+  return p;
 }
 
 function ArtCanvas({
@@ -515,36 +538,36 @@ function ArtCanvas({
   priority,
   className,
 }: {
-  art: ArtPreset | ArtRecipe
-  seed: number
-  w: number
-  h: number
-  density: number
-  priority: number
-  className?: string
+  art: ArtPreset | ArtRecipe;
+  seed: number;
+  w: number;
+  h: number;
+  density: number;
+  priority: number;
+  className?: string;
 }) {
-  const ref = React.useRef<HTMLCanvasElement>(null)
-  const [ready, setReady] = React.useState(false)
-  const recipe = recipeOf(art)
-  const key = JSON.stringify(recipe)
-  const pw = Math.round(w * density)
-  const ph = Math.round(h * density)
+  const ref = React.useRef<HTMLCanvasElement>(null);
+  const [ready, setReady] = React.useState(false);
+  const recipe = recipeOf(art);
+  const key = JSON.stringify(recipe);
+  const pw = Math.round(w * density);
+  const ph = Math.round(h * density);
 
   React.useEffect(() => {
-    let live = true
-    setReady(false)
+    let live = true;
+    setReady(false);
     paint(JSON.parse(key) as ArtRecipe, seed, pw, ph, priority).then((src) => {
-      const c = ref.current
-      if (!live || !c) return
-      c.width = src.width
-      c.height = src.height
-      c.getContext("2d")?.drawImage(src, 0, 0)
-      setReady(true)
-    })
+      const c = ref.current;
+      if (!live || !c) return;
+      c.width = src.width;
+      c.height = src.height;
+      c.getContext("2d")?.drawImage(src, 0, 0);
+      setReady(true);
+    });
     return () => {
-      live = false
-    }
-  }, [key, seed, pw, ph, priority])
+      live = false;
+    };
+  }, [key, seed, pw, ph, priority]);
 
   return (
     <canvas
@@ -554,23 +577,23 @@ function ArtCanvas({
       data-ready={ready || undefined}
       style={{ width: w, height: h, maxWidth: "none" }}
     />
-  )
+  );
 }
 
 // ---------------------------------------------------------------------------
 // Geometry, in the folder's own units. The stage is drawn at 340 × 272 and
 // scaled to `width`, so the shapes can be fixed paths.
 
-const W = 340
-const H = 272
-const HEADROOM = 54 // room above the back panel for the files to rise into
-const FRONT_TOP = 74
-const FRONT_H = H - FRONT_TOP
-const SHEET_W = 272
-const SHEET_H = 184
+const W = 340;
+const H = 272;
+const HEADROOM = 54; // room above the back panel for the files to rise into
+const FRONT_TOP = 74;
+const FRONT_H = H - FRONT_TOP;
+const SHEET_W = 272;
+const SHEET_H = 184;
 
 const BACK_PATH =
-  "M0 56A22 22 0 0 1 22 34L146 34C170 34 172 0 198 0L318 0A22 22 0 0 1 340 22L340 250A22 22 0 0 1 318 272L22 272A22 22 0 0 1 0 250Z"
+  "M0 56A22 22 0 0 1 22 34L146 34C170 34 172 0 198 0L318 0A22 22 0 0 1 340 22L340 250A22 22 0 0 1 318 272L22 272A22 22 0 0 1 0 250Z";
 const FRONT_PATH =
   "M0 22A22 22 0 0 1 22 0L118 0C144 0 146 32 172 32L318 32A22 22 0 0 1 340 54L340 " +
   (FRONT_H - 22) +
@@ -580,40 +603,40 @@ const FRONT_PATH =
   FRONT_H +
   "A22 22 0 0 1 0 " +
   (FRONT_H - 22) +
-  "Z"
+  "Z";
 
-const MAX_VISIBLE = 4
+const MAX_VISIBLE = 4;
 
 const SAMPLE_FILES: FolderFile[] = [
   { name: "Cover — final", meta: "PNG · 4.8 MB", art: "ember" },
   { name: "Moodboard", meta: "24 images", art: "dusk" },
   { name: "Brief.pdf", meta: "PDF · 1.2 MB" },
-]
+];
 
 /**
  * The folder's list, with a stable numeric id per file so a sheet keeps its
  * identity across updates. A file is recognised by its `id`, or, without one,
  * by its position and name.
  */
-type Tracked = { files: FolderFile[]; keys: string[]; ids: number[]; next: number }
+type Tracked = { files: FolderFile[]; keys: string[]; ids: number[]; next: number };
 
 const fileKey = (file: FolderFile, index: number): string =>
-  file.id != null ? "id:" + file.id : "at:" + index + ":" + file.name
+  file.id != null ? "id:" + file.id : "at:" + index + ":" + file.name;
 
 /** Pure: the same files keep their ids, new ones get the next ids. */
 function track(prev: Tracked | null, files: FolderFile[]): Tracked {
-  const known = new Map<string, number>()
-  if (prev) prev.keys.forEach((key, i) => known.set(key, prev.ids[i]))
-  let next = prev ? prev.next : 0
-  const keys = files.map(fileKey)
+  const known = new Map<string, number>();
+  if (prev) prev.keys.forEach((key, i) => known.set(key, prev.ids[i]));
+  let next = prev ? prev.next : 0;
+  const keys = files.map(fileKey);
   const ids = keys.map((key) => {
-    const found = known.get(key)
-    if (found !== undefined) return found
-    const id = next++
-    known.set(key, id)
-    return id
-  })
-  return { files, keys, ids, next }
+    const found = known.get(key);
+    if (found !== undefined) return found;
+    const id = next++;
+    known.set(key, id);
+    return id;
+  });
+  return { files, keys, ids, next };
 }
 
 export default function GlassFolder({
@@ -640,180 +663,185 @@ export default function GlassFolder({
   className,
   style,
 }: GlassFolderProps) {
-  const uid = React.useId().replace(/:/g, "")
-  const rootRef = React.useRef<HTMLDivElement>(null)
-  const filesRef = React.useRef<HTMLDivElement>(null)
-  const hitRef = React.useRef<HTMLButtonElement>(null)
-  const keyRef = React.useRef<HTMLButtonElement>(null)
-  const menuRef = React.useRef<HTMLDivElement>(null)
+  const uid = React.useId().replace(/:/g, "");
+  const rootRef = React.useRef<HTMLDivElement>(null);
+  const filesRef = React.useRef<HTMLDivElement>(null);
+  const hitRef = React.useRef<HTMLButtonElement>(null);
+  const keyRef = React.useRef<HTMLButtonElement>(null);
+  const menuRef = React.useRef<HTMLDivElement>(null);
 
-  const L: GlassFolderLabels = { ...GLASS_FOLDER_LABELS_FR, ...labelsProp }
+  const L: GlassFolderLabels = { ...GLASS_FOLDER_LABELS_FR, ...labelsProp };
 
   // ids survive re-renders so a newly added file is the only one that animates in
-  const [list, setList] = React.useState<Tracked>(() => track(null, filesProp ?? SAMPLE_FILES))
-  const files = list.files
-  const [dropped, setDropped] = React.useState<number | null>(null)
-  const [bump, setBump] = React.useState(0)
+  const [list, setList] = React.useState<Tracked>(() => track(null, filesProp ?? SAMPLE_FILES));
+  const files = list.files;
+  const [dropped, setDropped] = React.useState<number | null>(null);
+  const [bump, setBump] = React.useState(0);
 
   // Follow `files` when its content changes (not merely its reference), using
   // React's "adjust state while rendering" pattern rather than an effect.
-  const filesSig = filesProp ? JSON.stringify(filesProp) : ""
-  const [syncedSig, setSyncedSig] = React.useState(filesSig)
+  const filesSig = filesProp ? JSON.stringify(filesProp) : "";
+  const [syncedSig, setSyncedSig] = React.useState(filesSig);
   if (filesProp && filesSig !== syncedSig) {
-    setSyncedSig(filesSig)
-    const nextList = track(list, filesProp)
-    const before = new Set(list.ids)
-    const fresh = nextList.ids.filter((id) => !before.has(id))
-    setList(nextList)
+    setSyncedSig(filesSig);
+    const nextList = track(list, filesProp);
+    const before = new Set(list.ids);
+    const fresh = nextList.ids.filter((id) => !before.has(id));
+    setList(nextList);
     if (fresh.length) {
-      setDropped(fresh[fresh.length - 1])
-      setBump((b) => b + 1)
+      setDropped(fresh[fresh.length - 1]);
+      setBump((b) => b + 1);
     }
   }
 
-  const [openState, setOpenState] = React.useState(defaultOpen)
-  const open = openProp ?? openState
+  const [openState, setOpenState] = React.useState(defaultOpen);
+  const open = openProp ?? openState;
   const setOpen = React.useCallback(
     (next: boolean) => {
-      if (openProp === undefined) setOpenState(next)
-      onOpenChange?.(next)
+      if (openProp === undefined) setOpenState(next);
+      onOpenChange?.(next);
     },
     [openProp, onOpenChange],
-  )
-  const [menuOpen, setMenuOpen] = React.useState(false)
-  const [entered, setEntered] = React.useState(!appear)
+  );
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const [entered, setEntered] = React.useState(!appear);
 
-  const k = width / W
-  const density = Math.min(1.5, Math.max(1, typeof window === "undefined" ? 1 : window.devicePixelRatio || 1)) * k
+  const k = width / W;
+  const density =
+    Math.min(1.5, Math.max(1, typeof window === "undefined" ? 1 : window.devicePixelRatio || 1)) *
+    k;
 
   // ---- entrance: assemble the first time the folder is on screen ----------
   React.useEffect(() => {
-    if (!appear) return
-    const el = rootRef.current
+    if (!appear) return;
+    const el = rootRef.current;
     if (!el || typeof IntersectionObserver === "undefined") {
-      setEntered(true)
-      return
+      setEntered(true);
+      return;
     }
-    let t = 0
+    let t = 0;
     const io = new IntersectionObserver(
       (entries) => {
-        if (!entries.some((e) => e.isIntersecting)) return
-        io.disconnect()
-        t = window.setTimeout(() => setEntered(true), appearDelay)
+        if (!entries.some((e) => e.isIntersecting)) return;
+        io.disconnect();
+        t = window.setTimeout(() => setEntered(true), appearDelay);
       },
       { threshold: 0.25 },
-    )
-    io.observe(el)
+    );
+    io.observe(el);
     return () => {
-      io.disconnect()
-      window.clearTimeout(t)
-    }
-  }, [appear, appearDelay])
+      io.disconnect();
+      window.clearTimeout(t);
+    };
+  }, [appear, appearDelay]);
 
   // ---- pointer: light and parallax follow the cursor, no re-renders -------
   React.useEffect(() => {
-    const el = rootRef.current
-    if (!el) return
-    let raf = 0
-    let px = 0
-    let py = 0
+    const el = rootRef.current;
+    if (!el) return;
+    let raf = 0;
+    let px = 0;
+    let py = 0;
     const write = () => {
-      raf = 0
-      el.style.setProperty("--gf-px", px.toFixed(3))
-      el.style.setProperty("--gf-py", py.toFixed(3))
-    }
+      raf = 0;
+      el.style.setProperty("--gf-px", px.toFixed(3));
+      el.style.setProperty("--gf-py", py.toFixed(3));
+    };
     const move = (e: PointerEvent) => {
-      if (e.pointerType === "touch") return
-      const r = el.getBoundingClientRect()
-      px = ((e.clientX - r.left) / r.width) * 2 - 1
-      py = ((e.clientY - r.top) / r.height) * 2 - 1
-      if (!raf) raf = requestAnimationFrame(write)
-    }
+      if (e.pointerType === "touch") return;
+      const r = el.getBoundingClientRect();
+      px = ((e.clientX - r.left) / r.width) * 2 - 1;
+      py = ((e.clientY - r.top) / r.height) * 2 - 1;
+      if (!raf) raf = requestAnimationFrame(write);
+    };
     const leave = () => {
-      px = 0
-      py = 0
-      if (!raf) raf = requestAnimationFrame(write)
-    }
-    el.addEventListener("pointermove", move)
-    el.addEventListener("pointerleave", leave)
+      px = 0;
+      py = 0;
+      if (!raf) raf = requestAnimationFrame(write);
+    };
+    el.addEventListener("pointermove", move);
+    el.addEventListener("pointerleave", leave);
     return () => {
-      el.removeEventListener("pointermove", move)
-      el.removeEventListener("pointerleave", leave)
-      cancelAnimationFrame(raf)
-    }
-  }, [])
+      el.removeEventListener("pointermove", move);
+      el.removeEventListener("pointerleave", leave);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
 
   // ---- closed files are out of the tab order ------------------------------
   React.useEffect(() => {
-    filesRef.current?.toggleAttribute("inert", !open)
-  }, [open])
+    filesRef.current?.toggleAttribute("inert", !open);
+  }, [open]);
 
   // ---- Escape and a press outside close whatever is open ------------------
   React.useEffect(() => {
-    if (!open && !menuOpen) return
+    if (!open && !menuOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return
+      if (e.key !== "Escape") return;
       if (menuOpen) {
-        setMenuOpen(false)
-        keyRef.current?.focus()
+        setMenuOpen(false);
+        keyRef.current?.focus();
       } else {
-        setOpen(false)
-        hitRef.current?.focus()
+        setOpen(false);
+        hitRef.current?.focus();
       }
-    }
+    };
     const onDown = (e: PointerEvent) => {
-      const t = e.target as Node
-      if (menuOpen && !menuRef.current?.contains(t) && !keyRef.current?.contains(t)) setMenuOpen(false)
-      if (open && !menuOpen && !rootRef.current?.contains(t)) setOpen(false)
-    }
-    document.addEventListener("keydown", onKey)
-    document.addEventListener("pointerdown", onDown)
+      const t = e.target as Node;
+      if (menuOpen && !menuRef.current?.contains(t) && !keyRef.current?.contains(t))
+        setMenuOpen(false);
+      if (open && !menuOpen && !rootRef.current?.contains(t)) setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onDown);
     return () => {
-      document.removeEventListener("keydown", onKey)
-      document.removeEventListener("pointerdown", onDown)
-    }
-  }, [open, menuOpen, setOpen])
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onDown);
+    };
+  }, [open, menuOpen, setOpen]);
 
   // focus the first menu item when the menu opens
   React.useEffect(() => {
-    if (menuOpen) menuRef.current?.querySelector<HTMLElement>("[role=menuitem]")?.focus()
-  }, [menuOpen])
+    if (menuOpen) menuRef.current?.querySelector<HTMLElement>("[role=menuitem]")?.focus();
+  }, [menuOpen]);
 
   const addFile = () => {
-    const made = onAdd?.(files)
-    const file: FolderFile = made || { name: L.untitled + " " + (files.length + 1) }
-    const next = [...files, file]
-    const nextList = track(list, next)
-    setList(nextList)
-    setDropped(nextList.ids[nextList.ids.length - 1])
-    setBump((b) => b + 1)
-    onFilesChange?.(next)
-  }
+    const made = onAdd?.(files);
+    const file: FolderFile = made || { name: L.untitled + " " + (files.length + 1) };
+    const next = [...files, file];
+    const nextList = track(list, next);
+    setList(nextList);
+    setDropped(nextList.ids[nextList.ids.length - 1]);
+    setBump((b) => b + 1);
+    onFilesChange?.(next);
+  };
 
   const menuItems: FolderMenuItem[] = [
     { label: open ? L.closeFolder : L.openFolder, onSelect: () => setOpen(!open) },
     ...menu,
-  ]
+  ];
 
   const onMenuKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    const items = Array.from(menuRef.current?.querySelectorAll<HTMLElement>("[role=menuitem]") ?? [])
-    const at = items.indexOf(document.activeElement as HTMLElement)
+    const items = Array.from(
+      menuRef.current?.querySelectorAll<HTMLElement>("[role=menuitem]") ?? [],
+    );
+    const at = items.indexOf(document.activeElement as HTMLElement);
     const go = (i: number) => {
-      e.preventDefault()
-      items[(i + items.length) % items.length]?.focus()
-    }
-    if (e.key === "ArrowDown") go(at + 1)
-    else if (e.key === "ArrowUp") go(at - 1)
-    else if (e.key === "Home") go(0)
-    else if (e.key === "End") go(items.length - 1)
-    else if (e.key === "Tab") setMenuOpen(false)
-  }
+      e.preventDefault();
+      items[(i + items.length) % items.length]?.focus();
+    };
+    if (e.key === "ArrowDown") go(at + 1);
+    else if (e.key === "ArrowUp") go(at - 1);
+    else if (e.key === "Home") go(0);
+    else if (e.key === "End") go(items.length - 1);
+    else if (e.key === "Tab") setMenuOpen(false);
+  };
 
   // the newest files sit at the front of the stack, nearest the glass
-  const start = Math.max(0, files.length - MAX_VISIBLE)
-  const visible = files.slice(start)
-  const count = files.length
-  const metaLine = meta ?? L.count(count)
+  const start = Math.max(0, files.length - MAX_VISIBLE);
+  const visible = files.slice(start);
+  const count = files.length;
+  const metaLine = meta ?? L.count(count);
 
   return (
     <div
@@ -826,16 +854,38 @@ export default function GlassFolder({
       style={{ width, height: (H + HEADROOM) * k, ...style }}
     >
       <style>{GF_CSS}</style>
-      <div className="gf-stage" style={{ transform: "translateY(" + HEADROOM * k + "px) scale(" + k + ")" }}>
+      <div
+        className="gf-stage"
+        style={{ transform: "translateY(" + HEADROOM * k + "px) scale(" + k + ")" }}
+      >
         <div className="gf-tilt">
           <div className="gf-shadow" aria-hidden="true" />
 
           {/* back panel and its artwork */}
-          <div className="gf-back" style={{ clipPath: "path('" + BACK_PATH + "')" }} aria-hidden="true">
+          <div
+            className="gf-back"
+            style={{ clipPath: "path('" + BACK_PATH + "')" }}
+            aria-hidden="true"
+          >
             {image ? (
-              <img className="gf-art" src={image} alt="" width={W + 24} height={H + 24} draggable={false} />
+              <img
+                className="gf-art"
+                src={image}
+                alt=""
+                width={W + 24}
+                height={H + 24}
+                draggable={false}
+              />
             ) : art !== "none" ? (
-              <ArtCanvas className="gf-art" art={art} seed={seed} w={W + 24} h={H + 24} density={density} priority={0} />
+              <ArtCanvas
+                className="gf-art"
+                art={art}
+                seed={seed}
+                w={W + 24}
+                h={H + 24}
+                density={density}
+                priority={0}
+              />
             ) : null}
             <div className="gf-back-sheen" />
           </div>
@@ -851,7 +901,11 @@ export default function GlassFolder({
           >
             <div className="gf-tint" aria-hidden="true" />
             <div className="gf-spec" aria-hidden="true" />
-            <svg className="gf-rim gf-front-rim" viewBox={"0 0 " + W + " " + FRONT_H} aria-hidden="true">
+            <svg
+              className="gf-rim gf-front-rim"
+              viewBox={"0 0 " + W + " " + FRONT_H}
+              aria-hidden="true"
+            >
               <defs>
                 <linearGradient id={"gf-rim-" + uid} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0" stopColor="#fff" stopOpacity="0.95" />
@@ -868,8 +922,8 @@ export default function GlassFolder({
               aria-expanded={open}
               aria-label={(open ? L.close : L.open) + " " + label + ", " + L.count(count)}
               onClick={() => {
-                setMenuOpen(false)
-                setOpen(!open)
+                setMenuOpen(false);
+                setOpen(!open);
               }}
             />
             <div className="gf-label">
@@ -881,17 +935,29 @@ export default function GlassFolder({
           </div>
 
           {/* the contents: after the glass in tab order, beneath it on screen */}
-          <div ref={filesRef} className="gf-files" role="list" aria-label={L.contents + " " + label}>
+          <div
+            ref={filesRef}
+            className="gf-files"
+            role="list"
+            aria-label={L.contents + " " + label}
+          >
             {visible.map((file, v) => {
-              const id = list.ids[start + v]
-              const slot = fanSlot(v, visible.length)
-              const jitter = rng(hashString(file.name) + id)
-              const picture = !!(file.art || file.image)
+              const id = list.ids[start + v];
+              const slot = fanSlot(v, visible.length);
+              const jitter = rng(hashString(file.name) + id);
+              const picture = !!(file.art || file.image);
               const inner = (
                 <>
                   {picture ? (
                     file.image ? (
-                      <img className="gf-sheet-art" src={file.image} alt="" width={SHEET_W} height={SHEET_H} draggable={false} />
+                      <img
+                        className="gf-sheet-art"
+                        src={file.image}
+                        alt=""
+                        width={SHEET_W}
+                        height={SHEET_H}
+                        draggable={false}
+                      />
                     ) : (
                       <ArtCanvas
                         className="gf-sheet-art"
@@ -917,9 +983,12 @@ export default function GlassFolder({
                     {file.meta ? <span className="gf-sheet-meta">{file.meta}</span> : null}
                   </span>
                 </>
-              )
+              );
               const common = {
-                className: "gf-sheet" + (picture ? " gf-sheet--art" : "") + (id === dropped ? " gf-sheet--drop" : ""),
+                className:
+                  "gf-sheet" +
+                  (picture ? " gf-sheet--art" : "") +
+                  (id === dropped ? " gf-sheet--drop" : ""),
                 style: {
                   "--gf-slot": slot,
                   "--gf-depth": visible.length - 1 - v,
@@ -928,7 +997,7 @@ export default function GlassFolder({
                   zIndex: v + 1,
                 } as React.CSSProperties,
                 onAnimationEnd: id === dropped ? () => setDropped(null) : undefined,
-              }
+              };
               return (
                 <div key={id} role="listitem" className="gf-sheet-slot">
                   {file.href ? (
@@ -936,12 +1005,16 @@ export default function GlassFolder({
                       {inner}
                     </a>
                   ) : (
-                    <button {...common} type="button" onClick={() => onFileSelect?.(file, start + v)}>
+                    <button
+                      {...common}
+                      type="button"
+                      onClick={() => onFileSelect?.(file, start + v)}
+                    >
                       {inner}
                     </button>
                   )}
                 </div>
-              )
+              );
             })}
           </div>
 
@@ -957,7 +1030,12 @@ export default function GlassFolder({
               onClick={() => (action === "add" ? addFile() : setMenuOpen((m) => !m))}
             >
               {action === "add" ? (
-                <svg key={bump} className="gf-glyph gf-glyph--plus" viewBox="0 0 24 24" aria-hidden="true">
+                <svg
+                  key={bump}
+                  className="gf-glyph gf-glyph--plus"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
                   <path d="M12 4.5v15M4.5 12h15" />
                 </svg>
               ) : (
@@ -989,9 +1067,9 @@ export default function GlassFolder({
                   disabled={!menuOpen}
                   className={"gf-menu-item" + (item.danger ? " gf-menu-item--danger" : "")}
                   onClick={() => {
-                    setMenuOpen(false)
-                    keyRef.current?.focus()
-                    item.onSelect?.()
+                    setMenuOpen(false);
+                    keyRef.current?.focus();
+                    item.onSelect?.();
                   }}
                 >
                   {item.label}
@@ -1002,7 +1080,7 @@ export default function GlassFolder({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 const GF_CSS = `
@@ -1429,7 +1507,7 @@ canvas.gf-sheet-art[data-ready] { opacity: 1; filter: none; }
   }
   .gf-tilt { transform: none; }
 }
-`
+`;
 
 // ---------------------------------------------------------------------------
 // New-folder tile: an empty folder outline with the `+` key, the same size and
@@ -1438,20 +1516,20 @@ canvas.gf-sheet-art[data-ready] { opacity: 1; filter: none; }
 
 export type NewFolderTileProps = {
   /** Called on click, Enter or Space. */
-  onCreate?: () => void
+  onCreate?: () => void;
   /** Accessible name of the tile. */
-  ariaLabel?: string
+  ariaLabel?: string;
   /** Title on the outline. */
-  title?: string
+  title?: string;
   /** Second line on the outline. */
-  hint?: string
-  tone?: "light" | "dark"
+  hint?: string;
+  tone?: "light" | "dark";
   /** Width in px, as for `GlassFolder`. */
-  width?: number
-  disabled?: boolean
-  className?: string
-  style?: React.CSSProperties
-}
+  width?: number;
+  disabled?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+};
 
 export function NewFolderTile({
   onCreate,
@@ -1464,7 +1542,7 @@ export function NewFolderTile({
   className,
   style,
 }: NewFolderTileProps) {
-  const k = width / W
+  const k = width / W;
   return (
     <div
       className={"gf-root gf-new" + (className ? " " + className : "")}
@@ -1474,12 +1552,23 @@ export function NewFolderTile({
       style={{ width, height: (H + HEADROOM) * k, ...style }}
     >
       <style>{GF_CSS + NEW_CSS}</style>
-      <div className="gf-stage" style={{ transform: "translateY(" + HEADROOM * k + "px) scale(" + k + ")" }}>
+      <div
+        className="gf-stage"
+        style={{ transform: "translateY(" + HEADROOM * k + "px) scale(" + k + ")" }}
+      >
         <svg className="gf-new-shape" viewBox={"0 0 " + W + " " + H} aria-hidden="true">
           <path d={BACK_PATH} />
         </svg>
-        <div className="gf-new-glass" style={{ clipPath: "path('" + FRONT_PATH + "')" }} aria-hidden="true" />
-        <svg className="gf-new-shape gf-new-front" viewBox={"0 0 " + W + " " + FRONT_H} aria-hidden="true">
+        <div
+          className="gf-new-glass"
+          style={{ clipPath: "path('" + FRONT_PATH + "')" }}
+          aria-hidden="true"
+        />
+        <svg
+          className="gf-new-shape gf-new-front"
+          viewBox={"0 0 " + W + " " + FRONT_H}
+          aria-hidden="true"
+        >
           <path d={FRONT_PATH} />
         </svg>
         <div className="gf-label" aria-hidden="true">
@@ -1500,7 +1589,7 @@ export function NewFolderTile({
         />
       </div>
     </div>
-  )
+  );
 }
 
 const NEW_CSS = `
@@ -1560,4 +1649,4 @@ const NEW_CSS = `
 .gf-new[data-tone="dark"] .gf-new-front { fill: none; }
 .gf-new[data-tone="dark"] .gf-new-glass { background: rgba(18, 18, 20, .45); }
 .gf-new[data-tone="dark"]:hover .gf-new-shape { stroke: rgba(245, 245, 247, .55); }
-`
+`;
