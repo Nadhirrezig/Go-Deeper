@@ -225,7 +225,7 @@ export const ART_PRESETS: Record<ArtPreset, ArtRecipe> = {
 /** `#rgb` or `#rrggbb` to a triple. Anything unreadable comes back mid-grey. */
 export function hexToRgb(hex: string): [number, number, number] {
   let h = hex.trim().replace(/^#/, "");
-  if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+  if (h.length === 3) h = h[0]! + h[0]! + h[1]! + h[1]! + h[2]! + h[2]!;
   const n = /^[0-9a-f]{6}$/i.test(h) ? parseInt(h, 16) : 0x808080;
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
@@ -258,11 +258,11 @@ function makeFbm(seed: number): (x: number, y: number, octaves: number) => numbe
   for (let i = 0; i < 256; i++) p.push(i);
   for (let i = 255; i > 0; i--) {
     const j = Math.floor(r() * (i + 1));
-    const t = p[i];
-    p[i] = p[j];
+    const t = p[i]!;
+    p[i] = p[j]!;
     p[j] = t;
   }
-  for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
+  for (let i = 0; i < 512; i++) perm[i] = p[i & 255]!;
   for (let i = 0; i < 256; i++) {
     const a = r() * Math.PI * 2;
     grad[i * 2] = Math.cos(a);
@@ -275,14 +275,14 @@ function makeFbm(seed: number): (x: number, y: number, octaves: number) => numbe
     const yf = y - yi;
     const X = xi & 255;
     const Y = yi & 255;
-    const h00 = perm[X + perm[Y]] * 2;
-    const h10 = perm[X + 1 + perm[Y]] * 2;
-    const h01 = perm[X + perm[Y + 1]] * 2;
-    const h11 = perm[X + 1 + perm[Y + 1]] * 2;
-    const d00 = grad[h00] * xf + grad[h00 + 1] * yf;
-    const d10 = grad[h10] * (xf - 1) + grad[h10 + 1] * yf;
-    const d01 = grad[h01] * xf + grad[h01 + 1] * (yf - 1);
-    const d11 = grad[h11] * (xf - 1) + grad[h11 + 1] * (yf - 1);
+    const h00 = perm[X + perm[Y]!]! * 2;
+    const h10 = perm[X + 1 + perm[Y]!]! * 2;
+    const h01 = perm[X + perm[Y + 1]!]! * 2;
+    const h11 = perm[X + 1 + perm[Y + 1]!]! * 2;
+    const d00 = grad[h00]! * xf + grad[h00 + 1]! * yf;
+    const d10 = grad[h10]! * (xf - 1) + grad[h10 + 1]! * yf;
+    const d01 = grad[h01]! * xf + grad[h01 + 1]! * (yf - 1);
+    const d11 = grad[h11]! * (xf - 1) + grad[h11 + 1]! * (yf - 1);
     const u = xf * xf * xf * (xf * (xf * 6 - 15) + 10);
     const v = yf * yf * yf * (yf * (yf * 6 - 15) + 10);
     return d00 + u * (d10 - d00) + v * (d01 - d00 + u * (d11 - d01 - d10 + d00));
@@ -385,7 +385,8 @@ export function createArtJob(
       const r = gy * gw;
       for (let x = 0; x < w; x++) {
         const c = (x >> 1) + 1;
-        T[gy * w + x] = x & 1 ? cr(G[r + c - 1], G[r + c], G[r + c + 1], G[r + c + 2]) : G[r + c];
+        T[gy * w + x] =
+          x & 1 ? cr(G[r + c - 1]!, G[r + c]!, G[r + c + 1]!, G[r + c + 2]!) : G[r + c]!;
       }
     }
     for (let y = 0; y < h; y++) {
@@ -393,16 +394,16 @@ export function createArtJob(
       for (let x = 0; x < w; x++) {
         F[y * w + x] =
           y & 1
-            ? cr(T[(c - 1) * w + x], T[c * w + x], T[(c + 1) * w + x], T[(c + 2) * w + x])
-            : T[c * w + x];
+            ? cr(T[(c - 1) * w + x]!, T[c * w + x]!, T[(c + 1) * w + x]!, T[(c + 2) * w + x]!)
+            : T[c * w + x]!;
         const gx = (x >> 1) + 1;
-        const q0 = GQ[c * gw + gx];
-        const qx = x & 1 ? (q0 + GQ[c * gw + gx + 1]) / 2 : q0;
+        const q0 = GQ[c * gw + gx]!;
+        const qx = x & 1 ? (q0 + GQ[c * gw + gx + 1]!) / 2 : q0;
         const q1 =
           y & 1
             ? x & 1
-              ? (GQ[(c + 1) * gw + gx] + GQ[(c + 1) * gw + gx + 1]) / 2
-              : GQ[(c + 1) * gw + gx]
+              ? (GQ[(c + 1) * gw + gx]! + GQ[(c + 1) * gw + gx + 1]!) / 2
+              : GQ[(c + 1) * gw + gx]!
             : qx;
         Q[y * w + x] = (qx + q1) / 2;
       }
@@ -413,10 +414,10 @@ export function createArtJob(
     // percentiles from a sample, not a full sort: cheap and just as stable
     const sample: number[] = [];
     const stride = Math.max(1, Math.floor(F.length / 4096));
-    for (let i = 0; i < F.length; i += stride) sample.push(F[i]);
+    for (let i = 0; i < F.length; i += stride) sample.push(F[i]!);
     sample.sort((a, b) => a - b);
-    const lo = sample[Math.floor(sample.length * 0.02)];
-    const hi = sample[Math.floor(sample.length * 0.98)];
+    const lo = sample[Math.floor(sample.length * 0.02)]!;
+    const hi = sample[Math.floor(sample.length * 0.98)]!;
     const k = 1 / (hi - lo || 1);
     const lx = -0.55;
     const ly = -0.65;
@@ -425,21 +426,21 @@ export function createArtJob(
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const i = y * w + x;
-        let t = (F[i] - lo) * k;
+        let t = (F[i]! - lo) * k;
         t = t < 0 ? 0 : t > 1 ? 1 : t;
         let j = 1;
-        while (j < stops.length - 1 && stops[j].t < t) j++;
-        const a = stops[j - 1];
-        const b = stops[j];
+        while (j < stops.length - 1 && stops[j]!.t < t) j++;
+        const a = stops[j - 1]!;
+        const b = stops[j]!;
         let f = (t - a.t) / (b.t - a.t || 1);
         f = f < 0 ? 0 : f > 1 ? 1 : f;
         f = f * f * (3 - 2 * f);
-        const gx = (F[x < w - 1 ? i + 1 : i] - F[x > 0 ? i - 1 : i]) * slope;
-        const gy = (F[y < h - 1 ? i + w : i] - F[y > 0 ? i - w : i]) * slope;
+        const gx = (F[x < w - 1 ? i + 1 : i]! - F[x > 0 ? i - 1 : i]!) * slope;
+        const gy = (F[y < h - 1 ? i + w : i]! - F[y > 0 ? i - w : i]!) * slope;
         const nd = (-gx * lx - gy * ly + lz) / Math.sqrt(gx * gx + gy * gy + 1);
         const spec = Math.pow(nd > 0 ? nd : 0, 24) * gloss * 255;
-        const silk = 1 + 0.035 * Math.sin(t * 150 + Q[i] * 24);
-        const vein = veins * Math.max(0, 1 - Math.abs(Q[i] - 0.42) * 14) * 0.6;
+        const silk = 1 + 0.035 * Math.sin(t * 150 + Q[i]! * 24);
+        const vein = veins * Math.max(0, 1 - Math.abs(Q[i]! - 0.42) * 14) * 0.6;
         const lit = (0.82 + 0.28 * nd) * silk * (1 - vein);
         pixels[i * 4] = (a.c[0] + (b.c[0] - a.c[0]) * f) * lit + spec;
         pixels[i * 4 + 1] = (a.c[1] + (b.c[1] - a.c[1]) * f) * lit + spec;
@@ -486,7 +487,7 @@ function pump() {
   const tick = () => {
     const until = performance.now() + 7;
     while (queue.length && performance.now() < until) {
-      const head = queue[0];
+      const head = queue[0]!;
       if (head.job.step(4)) {
         queue.shift();
         const c = document.createElement("canvas");
@@ -520,7 +521,7 @@ function paint(
     p = new Promise<Painted>((done) => {
       // never jump the job already in progress
       let at = queue.length;
-      while (at > 1 && queue[at - 1].priority > priority) at--;
+      while (at > 1 && queue[at - 1]!.priority > priority) at--;
       queue.splice(at, 0, { job: createArtJob(w, h, recipe, seed), priority, done });
       pump();
     });
@@ -547,22 +548,25 @@ function ArtCanvas({
   className?: string;
 }) {
   const ref = React.useRef<HTMLCanvasElement>(null);
-  const [ready, setReady] = React.useState(false);
   const recipe = recipeOf(art);
   const key = JSON.stringify(recipe);
   const pw = Math.round(w * density);
   const ph = Math.round(h * density);
+  // Ready means "the canvas holds the artwork for these exact inputs": when an input
+  // changes, `ready` turns false at once, without resetting state inside the effect.
+  const paintKey = [key, seed, pw, ph].join("|");
+  const [paintedKey, setPaintedKey] = React.useState<string | null>(null);
+  const ready = paintedKey === paintKey;
 
   React.useEffect(() => {
     let live = true;
-    setReady(false);
     paint(JSON.parse(key) as ArtRecipe, seed, pw, ph, priority).then((src) => {
       const c = ref.current;
       if (!live || !c) return;
       c.width = src.width;
       c.height = src.height;
       c.getContext("2d")?.drawImage(src, 0, 0);
-      setReady(true);
+      setPaintedKey([key, seed, pw, ph].join("|"));
     });
     return () => {
       live = false;
@@ -626,7 +630,7 @@ const fileKey = (file: FolderFile, index: number): string =>
 /** Pure: the same files keep their ids, new ones get the next ids. */
 function track(prev: Tracked | null, files: FolderFile[]): Tracked {
   const known = new Map<string, number>();
-  if (prev) prev.keys.forEach((key, i) => known.set(key, prev.ids[i]));
+  if (prev) prev.keys.forEach((key, i) => known.set(key, prev.ids[i]!));
   let next = prev ? prev.next : 0;
   const keys = files.map(fileKey);
   const ids = keys.map((key) => {
@@ -689,7 +693,7 @@ export default function GlassFolder({
     const fresh = nextList.ids.filter((id) => !before.has(id));
     setList(nextList);
     if (fresh.length) {
-      setDropped(fresh[fresh.length - 1]);
+      setDropped(fresh[fresh.length - 1]!);
       setBump((b) => b + 1);
     }
   }
@@ -811,7 +815,7 @@ export default function GlassFolder({
     const next = [...files, file];
     const nextList = track(list, next);
     setList(nextList);
-    setDropped(nextList.ids[nextList.ids.length - 1]);
+    setDropped(nextList.ids[nextList.ids.length - 1]!);
     setBump((b) => b + 1);
     onFilesChange?.(next);
   };
@@ -868,6 +872,7 @@ export default function GlassFolder({
             aria-hidden="true"
           >
             {image ? (
+              // eslint-disable-next-line @next/next/no-img-element -- plain <img> inside a CSS-scaled stage
               <img
                 className="gf-art"
                 src={image}
@@ -942,7 +947,7 @@ export default function GlassFolder({
             aria-label={L.contents + " " + label}
           >
             {visible.map((file, v) => {
-              const id = list.ids[start + v];
+              const id = list.ids[start + v]!;
               const slot = fanSlot(v, visible.length);
               const jitter = rng(hashString(file.name) + id);
               const picture = !!(file.art || file.image);
@@ -950,6 +955,7 @@ export default function GlassFolder({
                 <>
                   {picture ? (
                     file.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- plain <img> inside a CSS-scaled stage
                       <img
                         className="gf-sheet-art"
                         src={file.image}
