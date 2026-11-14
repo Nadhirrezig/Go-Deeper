@@ -1,5 +1,69 @@
+/**
+ * The `+` / `···` key in the folder's corner. Exported so the new-folder tile can show
+ * the exact same key (it is part of GF_CSS too).
+ */
+export const GF_KEY_CSS = `
+/* ---- the key: + or ··· ------------------------------------------------------ */
+.gf-key {
+  all: unset;
+  box-sizing: border-box;
+  position: absolute;
+  right: 22px;
+  bottom: 22px;
+  z-index: 12;
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform .35s var(--gf-spring), box-shadow .35s var(--gf-ease), background .35s var(--gf-ease);
+}
+.gf-key:hover { transform: translateY(-2px); }
+.gf-key:active { transform: translateY(0) scale(.93); transition-duration: .12s; }
+.gf-key:focus-visible { outline: 2px solid #4c8dff; outline-offset: 3px; }
+.gf-key--add {
+  color: #fff;
+  background: radial-gradient(120% 90% at 50% 0%, #3a3a3f 0%, #121214 55%, #050506 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .22),
+    inset 0 -3px 8px rgba(0, 0, 0, .7),
+    0 0 0 1px rgba(0, 0, 0, .75),
+    0 14px 22px -8px rgba(0, 0, 0, .55),
+    0 3px 6px -2px rgba(0, 0, 0, .35);
+}
+.gf-root[data-tone="dark"] .gf-key--add {
+  color: #111113;
+  background: radial-gradient(120% 90% at 50% 0%, #ffffff 0%, #ececee 55%, #d2d2d6 100%);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 8px rgba(0, 0, 0, .14), 0 0 0 1px rgba(0, 0, 0, .4), 0 14px 22px -8px rgba(0, 0, 0, .7);
+}
+.gf-key--more {
+  color: #111113;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .92) 0%, rgba(226, 226, 230, .82) 100%);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    inset 0 -2px 4px rgba(0, 0, 0, .06),
+    0 0 0 1px rgba(0, 0, 0, .16),
+    0 10px 18px -8px rgba(0, 0, 0, .3);
+}
+.gf-root[data-tone="dark"] .gf-key--more {
+  color: #f5f5f7;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, .06) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 0 0 1px rgba(255, 255, 255, .1), 0 10px 18px -8px rgba(0, 0, 0, .6);
+}
+.gf-key--more[aria-expanded="true"] { transform: scale(.96); }
+.gf-glyph { display: block; max-width: none; fill: none; stroke: currentColor; stroke-linecap: round; }
+.gf-glyph--plus { width: 26px; height: 26px; stroke-width: 1.6; animation: gf-turn .6s var(--gf-spring); }
+.gf-glyph--more { width: 30px; height: 12px; stroke-width: 1.7; }
+@keyframes gf-turn { from { rotate: -90deg; } to { rotate: 0deg; } }
+
+`;
+
 /** The folder's stylesheet (one string, injected once per page by `GlassFolderStyles`). */
-export const GF_CSS = `
+export const GF_CSS =
+  `
 .gf-root {
   --gf-px: 0;
   --gf-py: 0;
@@ -308,63 +372,9 @@ canvas.gf-sheet-art[data-ready] { opacity: 1; filter: none; }
   to { opacity: 1; translate: 0 0; filter: blur(0); }
 }
 
-/* ---- the key: + or ··· ------------------------------------------------------ */
-.gf-key {
-  all: unset;
-  box-sizing: border-box;
-  position: absolute;
-  right: 22px;
-  bottom: 22px;
-  z-index: 12;
-  width: 58px;
-  height: 58px;
-  border-radius: 18px;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  transition: transform .35s var(--gf-spring), box-shadow .35s var(--gf-ease), background .35s var(--gf-ease);
-}
-.gf-key:hover { transform: translateY(-2px); }
-.gf-key:active { transform: translateY(0) scale(.93); transition-duration: .12s; }
-.gf-key:focus-visible { outline: 2px solid #4c8dff; outline-offset: 3px; }
-.gf-key--add {
-  color: #fff;
-  background: radial-gradient(120% 90% at 50% 0%, #3a3a3f 0%, #121214 55%, #050506 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .22),
-    inset 0 -3px 8px rgba(0, 0, 0, .7),
-    0 0 0 1px rgba(0, 0, 0, .75),
-    0 14px 22px -8px rgba(0, 0, 0, .55),
-    0 3px 6px -2px rgba(0, 0, 0, .35);
-}
-.gf-root[data-tone="dark"] .gf-key--add {
-  color: #111113;
-  background: radial-gradient(120% 90% at 50% 0%, #ffffff 0%, #ececee 55%, #d2d2d6 100%);
-  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 8px rgba(0, 0, 0, .14), 0 0 0 1px rgba(0, 0, 0, .4), 0 14px 22px -8px rgba(0, 0, 0, .7);
-}
-.gf-key--more {
-  color: #111113;
-  background: linear-gradient(180deg, rgba(255, 255, 255, .92) 0%, rgba(226, 226, 230, .82) 100%);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  box-shadow:
-    inset 0 1px 0 #fff,
-    inset 0 -2px 4px rgba(0, 0, 0, .06),
-    0 0 0 1px rgba(0, 0, 0, .16),
-    0 10px 18px -8px rgba(0, 0, 0, .3);
-}
-.gf-root[data-tone="dark"] .gf-key--more {
-  color: #f5f5f7;
-  background: linear-gradient(180deg, rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, .06) 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 0 0 1px rgba(255, 255, 255, .1), 0 10px 18px -8px rgba(0, 0, 0, .6);
-}
-.gf-key--more[aria-expanded="true"] { transform: scale(.96); }
-.gf-glyph { display: block; max-width: none; fill: none; stroke: currentColor; stroke-linecap: round; }
-.gf-glyph--plus { width: 26px; height: 26px; stroke-width: 1.6; animation: gf-turn .6s var(--gf-spring); }
-.gf-glyph--more { width: 30px; height: 12px; stroke-width: 1.7; }
-@keyframes gf-turn { from { rotate: -90deg; } to { rotate: 0deg; } }
-
-/* ---- menu ------------------------------------------------------------------- */
+` +
+  GF_KEY_CSS.slice(1) +
+  `/* ---- menu ------------------------------------------------------------------- */
 .gf-menu {
   position: absolute;
   right: 22px;

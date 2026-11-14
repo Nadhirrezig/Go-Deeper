@@ -1,8 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { BACK_PATH, FRONT_H, FRONT_PATH, H, HEADROOM, W } from "./glass-folder/geometry";
-import { GlassFolderStyles } from "./glass-folder/folder-styles";
+// Reuses the folder's outline paths, stylesheet and `+` key (exported by glass-folder)
+// instead of copying them, so the tile always matches the folders next to it.
+import {
+  BACK_PATH,
+  FRONT_H,
+  FRONT_PATH,
+  GlassFolderStyles,
+  H,
+  HEADROOM,
+  PlusGlyph,
+  W,
+} from "./glass-folder";
 
 // ---------------------------------------------------------------------------
 // New-folder tile: an empty folder outline with the `+` key, the same size and
@@ -74,9 +84,7 @@ export function NewFolderTile({
           <span className="gf-meta">{hint}</span>
         </div>
         <span className="gf-key gf-key--add" aria-hidden="true">
-          <svg className="gf-glyph gf-glyph--plus" viewBox="0 0 24 24">
-            <path d="M12 4.5v15M4.5 12h15" />
-          </svg>
+          <PlusGlyph />
         </span>
         <button
           type="button"
