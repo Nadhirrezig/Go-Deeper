@@ -12,7 +12,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vipgroup/converter": "workspace:*",
     "@vipgroup/flipbook": "workspace:*",
     "next": "16.4.6",
     "react": "19.3.1",

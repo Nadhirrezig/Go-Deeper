@@ -44,9 +44,6 @@ importers:
 
   apps/studio:
     dependencies:
-      '@vipgroup/converter':
-        specifier: workspace:*
-        version: link:../../packages/converter
       '@vipgroup/flipbook':
         specifier: workspace:*
         version: link:../../packages/flipbook

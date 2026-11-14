@@ -1,6 +1,6 @@
 import { fork } from "node:child_process";
 import path from "node:path";
-import type { WorkerJob, WorkerMessage } from "@vipgroup/converter";
+import type { WorkerJob, WorkerMessage } from "@vipgroup/shared";
 import { findRepoRoot } from "../storage";
 import { ConversionFailure } from "./errors";
 import type { RunConversion } from "./queue";
