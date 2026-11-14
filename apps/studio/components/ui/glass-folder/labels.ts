@@ -1,6 +1,7 @@
 import type { GlassFolderLabels } from "./types";
 
 export const GLASS_FOLDER_LABELS_FR: GlassFolderLabels = {
+  folder: "Dossier",
   openFolder: "Ouvrir le dossier",
   closeFolder: "Fermer le dossier",
   open: "Ouvrir",
@@ -14,6 +15,7 @@ export const GLASS_FOLDER_LABELS_FR: GlassFolderLabels = {
 };
 
 export const GLASS_FOLDER_LABELS_EN: GlassFolderLabels = {
+  folder: "Folder",
   openFolder: "Open folder",
   closeFolder: "Close folder",
   open: "Open",

@@ -91,6 +91,8 @@ export type GlassFolderProps = {
 };
 
 export type GlassFolderLabels = {
+  /** Folder name used when no `label` is given. */
+  folder: string;
   /** First item of the `···` menu. */
   openFolder: string;
   closeFolder: string;

@@ -53,7 +53,7 @@ const SAMPLE_FILES: FolderFile[] = [
 ];
 
 export default function GlassFolder({
-  label = "My Files",
+  label: labelProp,
   meta,
   tone = "light",
   art = "aurora",
@@ -84,6 +84,7 @@ export default function GlassFolder({
   const menuRef = React.useRef<HTMLDivElement>(null);
 
   const L: GlassFolderLabels = { ...GLASS_FOLDER_LABELS_FR, ...labelsProp };
+  const label = labelProp ?? L.folder;
 
   // ids survive re-renders so a newly added file is the only one that animates in
   const [list, setList] = React.useState<Tracked>(() => track(null, filesProp ?? SAMPLE_FILES));
