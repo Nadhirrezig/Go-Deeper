@@ -90,6 +90,7 @@ All paths in the manifest are relative to the manifest's own URL. The reader res
 - **flipbook**: `page-flip` (StPageFlip, MIT). Built with `tsup`. Styles in one plain CSS file, every class prefixed `vgf-`, theming through CSS variables (`--vgf-*`). Do NOT use turn.js (paid licence).
 - Testing: `vitest`
 - Lint/format: ESLint + Prettier
+- Pinned in step 1: Next.js 16, React 19, TypeScript 6.0.x (typescript-eslint does not support TS 7 yet), ESLint 9 (Next's ESLint plugins do not support ESLint 10 yet).
 
 ## Conventions
 

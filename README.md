@@ -38,8 +38,33 @@ pnpm build
 | `pnpm test`         | Vitest in every package that has tests                              |
 | `pnpm format`       | Prettier — rewrite all files                                        |
 | `pnpm format:check` | Prettier — check only                                               |
+| `pnpm convert …`    | Converts a PDF into a flipbook folder (see below)                   |
 
 Run one package only: `pnpm --filter @vipgroup/flipbook test` (or `build`, `lint`, …).
+
+## Convert a PDF (CLI)
+
+```bash
+pnpm convert <file.pdf> [--out ./storage/flipbooks] [--title "…"] [--slug …] [--concurrency 2]
+```
+
+- No manual build needed: the command builds the converter first (~2 s).
+- Default `--out` is `./storage/flipbooks` at the repo root (git-ignored). Each book goes to
+  `<out>/<uuid>/` with `manifest.json`, `search.json`, `original.pdf` and `pages/NNN{-thumb,,-zoom}.webp`.
+- Prints `page 12/48` progress, then a summary: folder, page count, size per image size, duration,
+  warnings.
+- Ctrl+C aborts and removes the half-written folder.
+- Errors print one line and exit with code 1, e.g. `Error [PASSWORD_PROTECTED]: …`. Codes:
+  `INVALID_PDF`, `PASSWORD_PROTECTED`, `EMPTY_PDF`, `TOO_MANY_PAGES` (limit 500), `OUT_DIR_EXISTS`,
+  `ABORTED`.
+
+Example:
+
+```bash
+pnpm convert ~/Downloads/brochure.pdf --title "Test brochure"
+```
+
+Library use (studio, step 5): `import { convertPdf } from "@vipgroup/converter"`.
 
 ## Open the studio from another device (office Wi-Fi)
 
