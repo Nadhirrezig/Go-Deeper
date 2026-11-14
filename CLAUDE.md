@@ -27,8 +27,8 @@ A Heyzine-style tool: the team uploads a PDF, the app converts it into a page-fl
 | 2 | `@vipgroup/converter`: PDF → WebP pages (3 sizes) + `manifest.json` + `search.json`, with a CLI |
 | 3 | `@vipgroup/flipbook` reader core: flip + sound, double/single page, thumbnails, zoom, fullscreen, keyboard/swipe, lazy loading |
 | 4 | Reader: PDF download + in-book search |
-| 5 | Studio: upload, conversion progress, library, preview |
-| 6 | Cloud storage + PostgreSQL: upload books, draft / published status |
+| 5 | Studio: home, folders, upload + progress, folder and flipbook pages |
+| 6 | Cloud storage + PostgreSQL: upload books, folders table, draft / published status |
 | 7 | goexperience.travel integration: package published, `/flipbook/[slug]` route, `<Flipbook />` |
 | Later | Branding per book · Interactive pages (links, hotspots, video, table of contents) · Sharing & protection (share, page links, embed code, password, stats) |
 
@@ -105,6 +105,7 @@ All paths in the manifest are relative to the manifest's own URL. The reader res
 - Studio UI text in French (the team works in French); code, comments and commits in English.
 - Client components only where needed (`"use client"` at the top of the reader entry).
 - Accessibility: keyboard works everywhere, buttons have labels, focus is visible.
+- `apps/studio/components/ui/glass-folder.tsx` (and its `glass-folder/` modules, `new-folder-tile.tsx`): design owned by Nadhir: change only on request.
 
 ## Commands (root)
 

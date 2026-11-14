@@ -64,17 +64,42 @@ Example:
 pnpm convert ~/Downloads/brochure.pdf --title "Test brochure"
 ```
 
-Library use (studio, step 5): `import { convertPdf } from "@vipgroup/converter"`.
+Library use: `import { convertPdf } from "@vipgroup/converter"`. The studio runs each conversion
+in a child process with `@vipgroup/converter/worker` (built by `pnpm build`).
 
-## Preview books in the reader (temporary, until step 5)
+## Use the studio
 
-1. Convert at least one PDF: `pnpm convert brochure.pdf --title "Test brochure"`.
-2. Start the studio: `pnpm dev` (or `pnpm build && pnpm start` for production speed).
-3. Open http://localhost:3000/dev/books (from a phone: `http://<pc-ip>:3000/dev/books`) and pick
-   a book.
+Start it with `pnpm dev` (or `pnpm build && pnpm start` for production speed) and open
+http://localhost:3000, or `http://<pc-ip>:3000` from another device on the office network.
 
-The studio reads books from `<repo root>/storage/flipbooks`. Set `FLIPBOOKS_DIR` in `.env` to use
-another folder (see `.env.example`). Files are served by `/files/<id>/…`.
+- **Home**: the Flipbooks card (Blogs comes later).
+- **Flipbooks** (`/flipbooks`): one glass folder per folder. Click a folder to fan out its
+  flipbooks (covers); click one to open it. The `···` key of a folder: **Nouveau flipbook**
+  (upload a PDF into it), **Renommer**, **Supprimer** (only when empty, never the last folder).
+  The dashed folder with `+` at the end creates a folder. A first run creates "Général".
+- **Nouveau flipbook**: drop or choose a PDF; the title comes from the file name and the slug
+  from the title (a slug already used gets `-2`, `-3`…). **Convertir** shows the upload %, then
+  "Page X / Y". You can close the window: the flipbook shows "Conversion X/Y" in its folder and
+  drops in when it is ready. Uploads are converted one at a time, in order.
+- **Folder page** (`/flipbooks/folders/<id>`): every flipbook of the folder, newest first; failed
+  conversions can be removed there.
+- **Flipbook page** (`/flipbooks/<id>`): the reader, the details, **Télécharger le PDF** and
+  **Supprimer** (removes the record and its files).
+
+Books converted with `pnpm convert` appear in "Général" the next time the studio starts. A
+conversion cut short by stopping the studio is shown as "Conversion interrompue".
+
+Storage (all under `storage/`, never committed): `library.json` (folders and books, until
+PostgreSQL in step 6), `flipbooks/<id>/` (converted books, served by `/files/<id>/…`) and
+`uploads/` (PDFs waiting for conversion, emptied as they finish).
+
+| Variable        | Default               | Meaning                                    |
+| --------------- | --------------------- | ------------------------------------------ |
+| `MAX_UPLOAD_MB` | `200`                 | Largest PDF the studio accepts, in MB      |
+| `STORAGE_DIR`   | `<repo>/storage`      | Folder for library.json, books and uploads |
+| `FLIPBOOKS_DIR` | `<storage>/flipbooks` | Only the converted books, elsewhere        |
+
+Set them in `.env` (see `.env.example`).
 
 Tip: keep the repo (and so `storage/`) outside OneDrive or other synced folders — every book
 adds hundreds of image files, which slows conversion and can lock files during sync.
