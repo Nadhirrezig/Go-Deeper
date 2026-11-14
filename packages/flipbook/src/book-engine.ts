@@ -5,6 +5,7 @@
 import type { PageFlip, PageFlipState } from "page-flip";
 import type { PageLevel } from "./lazy-load";
 import type { BookLayout } from "./layout";
+import { applyLevels, createPage } from "./page-element";
 import type { FlipDirection, ResolvedBook } from "./types";
 
 export type EngineState = PageFlipState;
@@ -54,49 +55,6 @@ async function loadPageFlip(): Promise<PageFlipCtor> {
   return ctor;
 }
 
-interface PageElements {
-  thumb: HTMLImageElement;
-  image: HTMLImageElement;
-  level: PageLevel;
-}
-
-const LOADED_CLASS = "vgf-loaded";
-
-function createPage(page: number, alt: string): { element: HTMLElement; parts: PageElements } {
-  const element = document.createElement("div");
-  element.className = "vgf-page";
-  element.dataset.page = String(page);
-
-  // Blurred thumb underneath, standard image fading in on top once loaded.
-  const thumb = document.createElement("img");
-  thumb.className = "vgf-page-thumb";
-  thumb.alt = "";
-  thumb.setAttribute("aria-hidden", "true");
-  thumb.decoding = "async";
-  thumb.draggable = false;
-
-  const image = document.createElement("img");
-  image.className = "vgf-page-img";
-  image.alt = alt;
-  image.decoding = "async";
-  image.draggable = false;
-  image.addEventListener("load", () => image.classList.add(LOADED_CLASS));
-
-  element.append(thumb, image);
-  return { element, parts: { thumb, image, level: "none" } };
-}
-
-function setSource(img: HTMLImageElement, url: string | null): void {
-  if (url === null) {
-    if (!img.hasAttribute("src")) return;
-    img.removeAttribute("src");
-    img.classList.remove(LOADED_CLASS);
-  } else if (img.getAttribute("src") !== url) {
-    img.classList.remove(LOADED_CLASS);
-    img.src = url;
-  }
-}
-
 /**
  * page-flip never stops its requestAnimationFrame loop, even after `destroy()`:
  *   loop = (t) => { this.render(t); requestAnimationFrame(loop); }
@@ -136,7 +94,6 @@ export async function createBookEngine(
   host.replaceChildren(block);
 
   const pages = book.pages.map((page) => createPage(page.n, options.pageAlt(page.n)));
-  const parts = pages.map((page) => page.parts);
 
   const applyBlockSize = (layout: BookLayout): void => {
     block.style.width = `${layout.bookWidth}px`;
@@ -232,9 +189,14 @@ export async function createBookEngine(
   pageFlip.loadFromHTML(pages.map((page) => page.element));
 
   return {
-    next: () => pageFlip.flipNext(),
-    prev: () => pageFlip.flipPrev(),
+    next: () => {
+      if (!destroyed) pageFlip.flipNext();
+    },
+    prev: () => {
+      if (!destroyed) pageFlip.flipPrev();
+    },
     goTo(page) {
+      if (destroyed) return;
       const index = Math.min(Math.max(page - 1, 0), lastIndex);
       jumping = true;
       try {
@@ -244,6 +206,8 @@ export async function createBookEngine(
       }
     },
     setLayout(layout) {
+      // A mode change replaces the engine; React may still hand the old one a last layout.
+      if (destroyed) return;
       applyBlockSize(layout);
       settings.minWidth = layout.pageWidth;
       jumping = true;
@@ -255,19 +219,11 @@ export async function createBookEngine(
       }
     },
     setLevels(levels, order) {
-      for (const page of order) {
-        const index = page - 1;
-        const part = parts[index];
-        const source = book.pages[index];
-        const level = levels[index] ?? "none";
-        if (!part || !source || part.level === level) continue;
-        part.level = level;
-        setSource(part.thumb, level === "none" ? null : source.thumb);
-        setSource(part.image, level === "standard" ? source.standard : null);
-      }
+      if (!destroyed) applyLevels(pages, book, levels, order);
     },
     getBlock: () => block,
     cancelTouch() {
+      if (destroyed) return;
       // Private field of page-flip's UI: clearing it makes the pending touch a no-op.
       (pageFlip.getUI() as { touchPoint?: unknown }).touchPoint = null;
       pageFlip.userStop({ x: 0, y: 0 }, true);
