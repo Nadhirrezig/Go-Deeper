@@ -41,7 +41,7 @@ import { FolderSheet } from "./folder-sheet";
 import { BACK_PATH, FRONT_H, FRONT_PATH, H, HEADROOM, MAX_VISIBLE, W } from "./geometry";
 import { useDismiss, useEntrance, usePointerLight } from "./hooks";
 import { GLASS_FOLDER_LABELS_FR } from "./labels";
-import { GF_CSS } from "./styles";
+import { GlassFolderStyles } from "./folder-styles";
 import { track } from "./track-files";
 import type { Tracked } from "./track-files";
 import type { FolderFile, FolderMenuItem, GlassFolderLabels, GlassFolderProps } from "./types";
@@ -164,7 +164,7 @@ export default function GlassFolder({
       data-place={labelPlacement}
       style={{ width, height: (H + HEADROOM) * k, ...style }}
     >
-      <style>{GF_CSS}</style>
+      <GlassFolderStyles />
       <div
         className="gf-stage"
         style={{ transform: "translateY(" + HEADROOM * k + "px) scale(" + k + ")" }}

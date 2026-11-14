@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { BACK_PATH, FRONT_H, FRONT_PATH, H, HEADROOM, W } from "./glass-folder/geometry";
-import { GF_CSS } from "./glass-folder/styles";
+import { GlassFolderStyles } from "./glass-folder/folder-styles";
 
 // ---------------------------------------------------------------------------
 // New-folder tile: an empty folder outline with the `+` key, the same size and
@@ -46,7 +46,10 @@ export function NewFolderTile({
       data-place="bottom-left"
       style={{ width, height: (H + HEADROOM) * k, ...style }}
     >
-      <style>{GF_CSS + NEW_CSS}</style>
+      <GlassFolderStyles />
+      <style href="vipgroup-new-folder-tile" precedence="medium">
+        {NEW_CSS}
+      </style>
       <div
         className="gf-stage"
         style={{ transform: "translateY(" + HEADROOM * k + "px) scale(" + k + ")" }}

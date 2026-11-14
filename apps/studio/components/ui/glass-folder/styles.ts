@@ -1,4 +1,4 @@
-/** The folder's stylesheet (one string, injected by the component). */
+/** The folder's stylesheet (one string, injected once per page by `GlassFolderStyles`). */
 export const GF_CSS = `
 .gf-root {
   --gf-px: 0;
