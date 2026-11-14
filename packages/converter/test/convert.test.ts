@@ -209,3 +209,46 @@ describe("convertPdf", () => {
     expect(await readdir(outDir)).toEqual(["taken"]);
   });
 });
+
+describe("publish (rename of the finished folder)", () => {
+  const busy = (code: string) => Object.assign(new Error(code), { code });
+
+  it("retries a rename briefly blocked by another process (OneDrive, antivirus)", async () => {
+    const { publish } = await import("../src/convert");
+    const tmp = path.join(work, "book.tmp");
+    const final = path.join(work, "book");
+    await mkdir(tmp);
+    let calls = 0;
+    await publish(tmp, final, async (from, to) => {
+      calls++;
+      if (calls < 3) throw busy("EPERM");
+      const { rename } = await import("node:fs/promises");
+      await rename(from, to);
+    });
+    expect(calls).toBe(3);
+    expect(await readdir(work)).toContain("book");
+  });
+
+  it("reports OUT_DIR_EXISTS only when the folder is really there", async () => {
+    const { publish } = await import("../src/convert");
+    const final = path.join(work, "taken");
+    await mkdir(final);
+    await expectCode(
+      publish(path.join(work, "x.tmp"), final, async () => {
+        throw busy("EPERM");
+      }),
+      "OUT_DIR_EXISTS",
+    );
+  });
+
+  it("gives up on a rename that keeps failing", async () => {
+    const { publish } = await import("../src/convert");
+    let calls = 0;
+    const failing = publish(path.join(work, "y.tmp"), path.join(work, "y"), async () => {
+      calls++;
+      throw busy("EACCES");
+    });
+    await expect(failing).rejects.toMatchObject({ code: "EACCES" });
+    expect(calls).toBe(6);
+  }, 10_000);
+});

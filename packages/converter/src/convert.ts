@@ -99,7 +99,7 @@ export async function convertPdf(
       ]),
     ) as Record<SizeKey, Box>;
 
-    await rm(tmpDir, { recursive: true, force: true });
+    await rm(tmpDir, RM_OPTIONS);
     await mkdir(path.join(tmpDir, "pages"), { recursive: true });
     createdTmp = true;
     if (typeof input === "string") await copyFile(input, path.join(tmpDir, "original.pdf"));
@@ -177,7 +177,7 @@ export async function convertPdf(
     throw error;
   } finally {
     signal?.removeEventListener("abort", cancelRenders);
-    if (createdTmp) await rm(tmpDir, { recursive: true, force: true });
+    if (createdTmp) await rm(tmpDir, RM_OPTIONS);
     await loadingTask.destroy();
   }
 }
@@ -296,20 +296,38 @@ async function openDocument(promise: Promise<PDFDocumentProxy>): Promise<PDFDocu
   }
 }
 
-async function publish(tmpDir: string, finalDir: string): Promise<void> {
-  if (await exists(finalDir)) {
-    throw new ConverterError("OUT_DIR_EXISTS", `Book folder already exists: ${finalDir}`);
-  }
-  try {
-    await rename(tmpDir, finalDir);
-  } catch (error) {
-    const code = (error as NodeJS.ErrnoException).code;
-    if (code === "EEXIST" || code === "ENOTEMPTY" || code === "EPERM") {
-      throw new ConverterError("OUT_DIR_EXISTS", `Book folder already exists: ${finalDir}`, {
-        cause: error,
-      });
+/** Errors Windows returns while another process (OneDrive, antivirus, indexer) holds a file. */
+const TRANSIENT_FS_CODES = new Set(["EPERM", "EACCES", "EBUSY"]);
+/** Retries for a rename blocked by such a process: ~3 s in total. */
+const RENAME_RETRY_DELAYS_MS = [100, 200, 400, 800, 1500];
+
+/** Options for removing a folder: Node retries EBUSY / EPERM / ENOTEMPTY itself. */
+const RM_OPTIONS = { recursive: true, force: true, maxRetries: 5, retryDelay: 200 } as const;
+
+export async function publish(
+  tmpDir: string,
+  finalDir: string,
+  renameDir: (from: string, to: string) => Promise<void> = rename,
+): Promise<void> {
+  const exists_ = (): ConverterError =>
+    new ConverterError("OUT_DIR_EXISTS", `Book folder already exists: ${finalDir}`);
+  if (await exists(finalDir)) throw exists_();
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await renameDir(tmpDir, finalDir);
+      return;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code ?? "";
+      // Windows also reports a rename onto an existing folder as EPERM: check what is there.
+      if (code === "EEXIST" || code === "ENOTEMPTY" || (await exists(finalDir))) {
+        const conflict = exists_();
+        conflict.cause = error;
+        throw conflict;
+      }
+      const delay = RENAME_RETRY_DELAYS_MS[attempt];
+      if (!TRANSIENT_FS_CODES.has(code) || delay === undefined) throw error;
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
-    throw error;
   }
 }
 
