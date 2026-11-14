@@ -87,3 +87,16 @@ export const IconClose = () => (
     <path d="M6 6l12 12M18 6L6 18" />
   </Icon>
 );
+
+export const IconSearch = () => (
+  <Icon>
+    <circle cx="11" cy="11" r="7" />
+    <path d="M21 21l-5-5" />
+  </Icon>
+);
+
+export const IconDownload = () => (
+  <Icon>
+    <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
+  </Icon>
+);

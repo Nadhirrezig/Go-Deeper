@@ -1,4 +1,5 @@
-export type KeyAction = "next" | "prev" | "first" | "last" | "zoomIn" | "zoomOut" | "escape";
+export type KeyAction =
+  "next" | "prev" | "first" | "last" | "zoomIn" | "zoomOut" | "escape" | "search";
 
 export interface KeyLike {
   key: string;
@@ -19,6 +20,11 @@ export interface KeyContext {
  * The caller only asks while focus is inside the reader, so the host page is never hijacked.
  */
 export function keyToAction(event: KeyLike, context: KeyContext): KeyAction | null {
+  // Ctrl/Cmd+F opens the reader's search (the caller only asks while the reader has focus,
+  // so the browser's own find still works everywhere else on the page).
+  if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === "f") {
+    return "search";
+  }
   // Leave browser shortcuts (Ctrl +, Alt ←, …) alone.
   if (event.ctrlKey || event.metaKey || event.altKey) return null;
   if (event.key === "Escape") return "escape";

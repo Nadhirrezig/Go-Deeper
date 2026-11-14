@@ -21,6 +21,29 @@ export interface FlipbookLabels {
   soundOn: string;
   soundOff: string;
   close: string;
+  /** Toolbar button that downloads the original PDF. */
+  download: string;
+  /** Toolbar button and panel title. */
+  search: string;
+  searchInput: string;
+  searchPlaceholder: string;
+  searchClose: string;
+  searchLoading: string;
+  searchError: string;
+  /** Shown instead of the input when no page has text (scanned PDF). */
+  searchUnavailable: string;
+  searchMinChars: string;
+  searchNoResults: string;
+  searchResultsOne: string;
+  /** `{count}` results. */
+  searchResults: string;
+  /** Shown when the results are capped, `{max}` = 100. */
+  searchCapped: string;
+  searchMatchesOne: string;
+  /** `{count}` occurrences on one page. */
+  searchMatches: string;
+  /** Result row title, `{n}` = page number. */
+  searchResultPage: string;
 }
 
 export const labelsFr: FlipbookLabels = {
@@ -42,6 +65,22 @@ export const labelsFr: FlipbookLabels = {
   soundOn: "Activer le son",
   soundOff: "Couper le son",
   close: "Fermer",
+  download: "Télécharger le PDF",
+  search: "Rechercher",
+  searchInput: "Rechercher dans le document",
+  searchPlaceholder: "Rechercher…",
+  searchClose: "Fermer la recherche",
+  searchLoading: "Chargement de la recherche…",
+  searchError: "La recherche n’a pas pu être chargée.",
+  searchUnavailable: "La recherche n’est pas disponible pour ce document.",
+  searchMinChars: "Saisissez au moins 2 caractères.",
+  searchNoResults: "Aucun résultat.",
+  searchResultsOne: "1 résultat",
+  searchResults: "{count} résultats",
+  searchCapped: "Affichage des {max} premiers résultats",
+  searchMatchesOne: "1 occurrence",
+  searchMatches: "{count} occurrences",
+  searchResultPage: "Page {n}",
 };
 
 export const labelsEn: FlipbookLabels = {
@@ -63,6 +102,22 @@ export const labelsEn: FlipbookLabels = {
   soundOn: "Turn sound on",
   soundOff: "Turn sound off",
   close: "Close",
+  download: "Download PDF",
+  search: "Search",
+  searchInput: "Search the document",
+  searchPlaceholder: "Search…",
+  searchClose: "Close search",
+  searchLoading: "Loading search…",
+  searchError: "Search could not be loaded.",
+  searchUnavailable: "Search is not available for this document.",
+  searchMinChars: "Type at least 2 characters.",
+  searchNoResults: "No results.",
+  searchResultsOne: "1 result",
+  searchResults: "{count} results",
+  searchCapped: "Showing the first {max} results",
+  searchMatchesOne: "1 match",
+  searchMatches: "{count} matches",
+  searchResultPage: "Page {n}",
 };
 
 export function mergeLabels(overrides?: Partial<FlipbookLabels>): FlipbookLabels {
