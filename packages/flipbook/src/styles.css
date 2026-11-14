@@ -1,0 +1,20 @@
+/*
+ * @vipgroup/flipbook styles.
+ * Every class is prefixed `vgf-`; theme through `--vgf-*` CSS variables.
+ * Must not depend on the host app's Tailwind config.
+ */
+.vgf-root {
+  --vgf-bg: #f4f4f5;
+  --vgf-fg: #18181b;
+  --vgf-radius: 8px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 1rem;
+  border-radius: var(--vgf-radius);
+  background: var(--vgf-bg);
+  color: var(--vgf-fg);
+  font-family: system-ui, sans-serif;
+}
