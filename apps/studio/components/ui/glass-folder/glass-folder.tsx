@@ -34,32 +34,17 @@
  */
 
 import * as React from "react";
-import { hashString, rng } from "./art";
 import { ArtCanvas } from "./art-canvas";
-import {
-  BACK_PATH,
-  FRONT_H,
-  FRONT_PATH,
-  H,
-  HEADROOM,
-  MAX_VISIBLE,
-  SHEET_H,
-  SHEET_W,
-  W,
-  fanSlot,
-} from "./geometry";
+import { FolderKey } from "./folder-key";
+import { FolderMenu } from "./folder-menu";
+import { FolderSheet } from "./folder-sheet";
+import { BACK_PATH, FRONT_H, FRONT_PATH, H, HEADROOM, MAX_VISIBLE, W } from "./geometry";
+import { useDismiss, useEntrance, usePointerLight } from "./hooks";
 import { GLASS_FOLDER_LABELS_FR } from "./labels";
 import { GF_CSS } from "./styles";
 import { track } from "./track-files";
 import type { Tracked } from "./track-files";
-import type {
-  ArtPreset,
-  ArtRecipe,
-  FolderFile,
-  FolderMenuItem,
-  GlassFolderLabels,
-  GlassFolderProps,
-} from "./types";
+import type { FolderFile, FolderMenuItem, GlassFolderLabels, GlassFolderProps } from "./types";
 
 const SAMPLE_FILES: FolderFile[] = [
   { name: "Cover — final", meta: "PNG · 4.8 MB", art: "ember" },
@@ -132,106 +117,20 @@ export default function GlassFolder({
     [openProp, onOpenChange],
   );
   const [menuOpen, setMenuOpen] = React.useState(false);
-  const [entered, setEntered] = React.useState(!appear);
-
   const k = width / W;
   const density =
     Math.min(1.5, Math.max(1, typeof window === "undefined" ? 1 : window.devicePixelRatio || 1)) *
     k;
 
-  // ---- entrance: assemble the first time the folder is on screen ----------
-  React.useEffect(() => {
-    if (!appear) return;
-    const el = rootRef.current;
-    if (!el || typeof IntersectionObserver === "undefined") {
-      setEntered(true);
-      return;
-    }
-    let t = 0;
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((e) => e.isIntersecting)) return;
-        io.disconnect();
-        t = window.setTimeout(() => setEntered(true), appearDelay);
-      },
-      { threshold: 0.25 },
-    );
-    io.observe(el);
-    return () => {
-      io.disconnect();
-      window.clearTimeout(t);
-    };
-  }, [appear, appearDelay]);
-
-  // ---- pointer: light and parallax follow the cursor, no re-renders -------
-  React.useEffect(() => {
-    const el = rootRef.current;
-    if (!el) return;
-    let raf = 0;
-    let px = 0;
-    let py = 0;
-    const write = () => {
-      raf = 0;
-      el.style.setProperty("--gf-px", px.toFixed(3));
-      el.style.setProperty("--gf-py", py.toFixed(3));
-    };
-    const move = (e: PointerEvent) => {
-      if (e.pointerType === "touch") return;
-      const r = el.getBoundingClientRect();
-      px = ((e.clientX - r.left) / r.width) * 2 - 1;
-      py = ((e.clientY - r.top) / r.height) * 2 - 1;
-      if (!raf) raf = requestAnimationFrame(write);
-    };
-    const leave = () => {
-      px = 0;
-      py = 0;
-      if (!raf) raf = requestAnimationFrame(write);
-    };
-    el.addEventListener("pointermove", move);
-    el.addEventListener("pointerleave", leave);
-    return () => {
-      el.removeEventListener("pointermove", move);
-      el.removeEventListener("pointerleave", leave);
-      cancelAnimationFrame(raf);
-    };
-  }, []);
+  const entered = useEntrance(rootRef, appear, appearDelay);
+  usePointerLight(rootRef);
 
   // ---- closed files are out of the tab order ------------------------------
   React.useEffect(() => {
     filesRef.current?.toggleAttribute("inert", !open);
   }, [open]);
 
-  // ---- Escape and a press outside close whatever is open ------------------
-  React.useEffect(() => {
-    if (!open && !menuOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      if (menuOpen) {
-        setMenuOpen(false);
-        keyRef.current?.focus();
-      } else {
-        setOpen(false);
-        hitRef.current?.focus();
-      }
-    };
-    const onDown = (e: PointerEvent) => {
-      const t = e.target as Node;
-      if (menuOpen && !menuRef.current?.contains(t) && !keyRef.current?.contains(t))
-        setMenuOpen(false);
-      if (open && !menuOpen && !rootRef.current?.contains(t)) setOpen(false);
-    };
-    document.addEventListener("keydown", onKey);
-    document.addEventListener("pointerdown", onDown);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.removeEventListener("pointerdown", onDown);
-    };
-  }, [open, menuOpen, setOpen]);
-
-  // focus the first menu item when the menu opens
-  React.useEffect(() => {
-    if (menuOpen) menuRef.current?.querySelector<HTMLElement>("[role=menuitem]")?.focus();
-  }, [menuOpen]);
+  useDismiss({ open, menuOpen, setOpen, setMenuOpen, rootRef, menuRef, keyRef, hitRef });
 
   const addFile = () => {
     const made = onAdd?.(files);
@@ -248,22 +147,6 @@ export default function GlassFolder({
     { label: open ? L.closeFolder : L.openFolder, onSelect: () => setOpen(!open) },
     ...menu,
   ];
-
-  const onMenuKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    const items = Array.from(
-      menuRef.current?.querySelectorAll<HTMLElement>("[role=menuitem]") ?? [],
-    );
-    const at = items.indexOf(document.activeElement as HTMLElement);
-    const go = (i: number) => {
-      e.preventDefault();
-      items[(i + items.length) % items.length]?.focus();
-    };
-    if (e.key === "ArrowDown") go(at + 1);
-    else if (e.key === "ArrowUp") go(at - 1);
-    else if (e.key === "Home") go(0);
-    else if (e.key === "End") go(items.length - 1);
-    else if (e.key === "Tab") setMenuOpen(false);
-  };
 
   // the newest files sit at the front of the stack, nearest the glass
   const start = Math.max(0, files.length - MAX_VISIBLE);
@@ -372,140 +255,47 @@ export default function GlassFolder({
           >
             {visible.map((file, v) => {
               const id = list.ids[start + v]!;
-              const slot = fanSlot(v, visible.length);
-              const jitter = rng(hashString(file.name) + id);
-              const picture = !!(file.art || file.image);
-              const inner = (
-                <>
-                  {picture ? (
-                    file.image ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- plain <img> inside a CSS-scaled stage
-                      <img
-                        className="gf-sheet-art"
-                        src={file.image}
-                        alt=""
-                        width={SHEET_W}
-                        height={SHEET_H}
-                        draggable={false}
-                      />
-                    ) : (
-                      <ArtCanvas
-                        className="gf-sheet-art"
-                        art={file.art as ArtPreset | ArtRecipe}
-                        seed={hashString(file.name) % 997}
-                        w={SHEET_W}
-                        h={SHEET_H}
-                        density={Math.min(density, 1.25)}
-                        priority={1}
-                      />
-                    )
-                  ) : (
-                    <span className="gf-lines" aria-hidden="true">
-                      <i style={{ width: "86%" }} />
-                      <i style={{ width: "92%" }} />
-                      <i style={{ width: "64%" }} />
-                      <i style={{ width: "88%" }} />
-                      <i style={{ width: "42%" }} />
-                    </span>
-                  )}
-                  <span className="gf-sheet-head">
-                    <span className="gf-sheet-name">{file.name}</span>
-                    {file.meta ? <span className="gf-sheet-meta">{file.meta}</span> : null}
-                  </span>
-                </>
-              );
-              const common = {
-                className:
-                  "gf-sheet" +
-                  (picture ? " gf-sheet--art" : "") +
-                  (id === dropped ? " gf-sheet--drop" : ""),
-                style: {
-                  "--gf-slot": slot,
-                  "--gf-depth": visible.length - 1 - v,
-                  "--gf-jx": ((jitter() - 0.5) * 10).toFixed(2) + "px",
-                  "--gf-jr": ((jitter() - 0.5) * 3.2).toFixed(2) + "deg",
-                  zIndex: v + 1,
-                } as React.CSSProperties,
-                onAnimationEnd: id === dropped ? () => setDropped(null) : undefined,
-              };
               return (
-                <div key={id} role="listitem" className="gf-sheet-slot">
-                  {file.href ? (
-                    <a {...common} href={file.href} onClick={() => onFileSelect?.(file, start + v)}>
-                      {inner}
-                    </a>
-                  ) : (
-                    <button
-                      {...common}
-                      type="button"
-                      onClick={() => onFileSelect?.(file, start + v)}
-                    >
-                      {inner}
-                    </button>
-                  )}
-                </div>
+                <FolderSheet
+                  key={id}
+                  file={file}
+                  id={id}
+                  position={v}
+                  visibleCount={visible.length}
+                  dropping={id === dropped}
+                  density={density}
+                  onDropEnd={() => setDropped(null)}
+                  onSelect={() => onFileSelect?.(file, start + v)}
+                />
               );
             })}
           </div>
 
           {action !== "none" ? (
-            <button
-              ref={keyRef}
-              type="button"
-              className={"gf-key gf-key--" + action}
-              aria-label={(action === "add" ? L.addFile : L.moreOptions) + " " + label}
-              aria-haspopup={action === "more" ? "menu" : undefined}
-              aria-expanded={action === "more" ? menuOpen : undefined}
-              aria-controls={action === "more" ? "gf-menu-" + uid : undefined}
+            <FolderKey
+              action={action}
+              keyRef={keyRef}
+              ariaLabel={(action === "add" ? L.addFile : L.moreOptions) + " " + label}
+              menuId={"gf-menu-" + uid}
+              menuOpen={menuOpen}
+              bump={bump}
               onClick={() => (action === "add" ? addFile() : setMenuOpen((m) => !m))}
-            >
-              {action === "add" ? (
-                <svg
-                  key={bump}
-                  className="gf-glyph gf-glyph--plus"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path d="M12 4.5v15M4.5 12h15" />
-                </svg>
-              ) : (
-                <svg className="gf-glyph gf-glyph--more" viewBox="0 0 30 12" aria-hidden="true">
-                  <rect x="1" y="1.5" width="8" height="9" rx="3.4" />
-                  <rect x="11" y="1.5" width="8" height="9" rx="3.4" />
-                  <rect x="21" y="1.5" width="8" height="9" rx="3.4" />
-                </svg>
-              )}
-            </button>
+            />
           ) : null}
 
           {action === "more" ? (
-            <div
-              ref={menuRef}
+            <FolderMenu
               id={"gf-menu-" + uid}
-              role="menu"
-              aria-label={L.options + " " + label}
-              className="gf-menu"
-              data-open={menuOpen || undefined}
-              onKeyDown={onMenuKey}
-            >
-              {menuItems.map((item, i) => (
-                <button
-                  key={item.label + i}
-                  type="button"
-                  role="menuitem"
-                  tabIndex={menuOpen ? -1 : undefined}
-                  disabled={!menuOpen}
-                  className={"gf-menu-item" + (item.danger ? " gf-menu-item--danger" : "")}
-                  onClick={() => {
-                    setMenuOpen(false);
-                    keyRef.current?.focus();
-                    item.onSelect?.();
-                  }}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
+              ariaLabel={L.options + " " + label}
+              open={menuOpen}
+              items={menuItems}
+              menuRef={menuRef}
+              onClose={() => {
+                setMenuOpen(false);
+                keyRef.current?.focus();
+              }}
+              onDismiss={() => setMenuOpen(false)}
+            />
           ) : null}
         </div>
       </div>
