@@ -1,7 +1,7 @@
 // TEMPORARY preview (step 3): lists the books found in ./storage/flipbooks.
 // Step 5 replaces this page with the real studio library.
 import Link from "next/link";
-import { listBooks } from "../../../lib/flipbooks-storage";
+import { listBooks } from "../../../lib/storage";
 
 export const dynamic = "force-dynamic";
 

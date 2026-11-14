@@ -6,7 +6,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Flipbook } from "@vipgroup/flipbook";
 import "@vipgroup/flipbook/styles.css";
-import { getStorageDir, isSafeSegment } from "../../../../lib/flipbooks-storage";
+import { getStorageDir, isSafeSegment } from "../../../../lib/storage";
 
 export const dynamic = "force-dynamic";
 

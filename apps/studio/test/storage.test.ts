@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { GET } from "../app/files/[...path]/route";
-import { getStorageDir, listBooks, resolveStorageFile } from "../lib/flipbooks-storage";
+import { getFlipbooksDir, listBooks, resolveStorageFile } from "../lib/storage";
 
 let work: string;
 let storage: string;
@@ -63,12 +63,12 @@ const get = (segments: string[], headers?: Record<string, string>): Promise<Resp
     params: Promise.resolve({ path: segments }),
   });
 
-describe("getStorageDir", () => {
+describe("getFlipbooksDir", () => {
   it("uses FLIPBOOKS_DIR when set, else <repo root>/storage/flipbooks", () => {
-    expect(getStorageDir()).toBe(storage);
+    expect(getFlipbooksDir()).toBe(storage);
     delete process.env.FLIPBOOKS_DIR;
     try {
-      const fallback = getStorageDir();
+      const fallback = getFlipbooksDir();
       expect(fallback.endsWith(path.join("storage", "flipbooks"))).toBe(true);
       // The test runs from apps/studio: the default must still point at the repo root.
       expect(fallback).not.toContain(path.join("apps", "studio"));

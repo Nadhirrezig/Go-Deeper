@@ -20,7 +20,7 @@ export const isSafeSegment = (segment: string): boolean =>
 // bundled: `turbopackIgnore` stops Next from tracing the whole project for these fs calls.
 
 /** Walk up from `start` to the folder holding `pnpm-workspace.yaml`. */
-function findRepoRoot(start: string): string {
+export function findRepoRoot(start: string): string {
   let dir = start;
   for (;;) {
     if (existsSync(/*turbopackIgnore: true*/ path.join(dir, "pnpm-workspace.yaml"))) return dir;
@@ -31,14 +31,37 @@ function findRepoRoot(start: string): string {
 }
 
 /**
- * Folder holding the converted books (`<dir>/<id>/manifest.json`, …).
- * `FLIPBOOKS_DIR` overrides the default `<repo root>/storage/flipbooks`.
+ * Studio data folder: `library.json`, `flipbooks/`, `uploads/`.
+ * `STORAGE_DIR` overrides the default `<repo root>/storage`.
  */
-export function getStorageDir(): string {
+export function getStorageRoot(): string {
+  const configured = process.env.STORAGE_DIR?.trim();
+  if (configured) return path.resolve(configured);
+  return path.join(findRepoRoot(process.cwd()), "storage");
+}
+
+/**
+ * Folder holding the converted books (`<dir>/<id>/manifest.json`, …).
+ * `FLIPBOOKS_DIR` overrides the default `<storage>/flipbooks`.
+ */
+export function getFlipbooksDir(): string {
   const configured = process.env.FLIPBOOKS_DIR?.trim();
   if (configured) return path.resolve(configured);
-  return path.join(findRepoRoot(process.cwd()), "storage", "flipbooks");
+  return path.join(getStorageRoot(), "flipbooks");
 }
+
+/** The library (folders and book records) until PostgreSQL in step 6. */
+export function getLibraryFile(): string {
+  return path.join(getStorageRoot(), "library.json");
+}
+
+/** Uploaded PDFs waiting for (or in) conversion. Emptied as jobs finish. */
+export function getUploadsDir(): string {
+  return path.join(getStorageRoot(), "uploads");
+}
+
+/** @deprecated Use getFlipbooksDir. Kept for the temporary /dev pages. */
+export const getStorageDir = getFlipbooksDir;
 
 export interface StorageFile {
   file: string;

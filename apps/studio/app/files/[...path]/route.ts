@@ -2,7 +2,7 @@ import { createReadStream } from "node:fs";
 import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
-import { getStorageDir, resolveStorageFile } from "../../../lib/flipbooks-storage";
+import { getFlipbooksDir, resolveStorageFile } from "../../../lib/storage";
 
 // Serves book files from the local storage folder (until cloud storage in step 6).
 
@@ -13,7 +13,7 @@ export async function GET(
   context: { params: Promise<{ path: string[] }> },
 ): Promise<Response> {
   const { path: segments } = await context.params;
-  const root = getStorageDir();
+  const root = getFlipbooksDir();
   const target = resolveStorageFile(root, segments);
   if (!target) return notFound();
 
