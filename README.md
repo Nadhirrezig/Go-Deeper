@@ -66,6 +66,39 @@ pnpm convert ~/Downloads/brochure.pdf --title "Test brochure"
 
 Library use (studio, step 5): `import { convertPdf } from "@vipgroup/converter"`.
 
+## Preview books in the reader (temporary, until step 5)
+
+1. Convert at least one PDF: `pnpm convert brochure.pdf --title "Test brochure"`.
+2. Start the studio: `pnpm dev` (or `pnpm build && pnpm start` for production speed).
+3. Open http://localhost:3000/dev/books (from a phone: `http://<pc-ip>:3000/dev/books`) and pick
+   a book.
+
+The studio reads books from `<repo root>/storage/flipbooks`. Set `FLIPBOOKS_DIR` in `.env` to use
+another folder (see `.env.example`). Files are served by `/files/<id>/…`.
+
+Tip: keep the repo (and so `storage/`) outside OneDrive or other synced folders — every book
+adds hundreds of image files, which slows conversion and can lock files during sync.
+
+## Use the reader in a React / Next.js app
+
+```tsx
+import { Flipbook, labelsEn } from "@vipgroup/flipbook";
+import "@vipgroup/flipbook/styles.css";
+
+<Flipbook manifestUrl="https://cdn.example.com/flipbooks/<id>/manifest.json" />;
+// or: <Flipbook manifest={manifest} baseUrl="https://cdn.example.com/flipbooks/<id>/" />
+// options: startPage, sound, labels (French by default, labelsEn exported), className,
+//          onPageChange(page), onReady(manifest)
+```
+
+Works in a Next.js server page without `dynamic(..., { ssr: false })`. The reader fills the
+width of its container; its height hugs the book up to 85vh, or set one with `className`.
+Theme it with the `--vgf-*` CSS variables listed at the top of
+`packages/flipbook/src/styles.css`.
+
+Reader keys (only while the reader has focus): ← → turn · Home / End · + / − zoom · Esc closes
+zoom, thumbnails or full screen.
+
 ## Open the studio from another device (office Wi-Fi)
 
 1. `pnpm dev` (or `pnpm build && pnpm start`) on the office PC.
