@@ -1,1 +1,45 @@
 @import "tailwindcss";
+
+/*
+ * Studio theme: the GlassFolder demo's look (light "desk", frosted glass, system font).
+ * The colour names follow the demo's classes (bg-background, text-foreground,
+ * text-muted-foreground); defined here with Tailwind v4 @theme instead of shadcn.
+ */
+@theme {
+  --color-background: #f3f3f4;
+  --color-foreground: #18181b;
+  --color-muted: #e7e7ea;
+  --color-muted-foreground: #71717a;
+  --color-border: rgb(24 24 27 / 0.1);
+  --color-glass: rgb(255 255 255 / 0.62);
+  --color-danger: #d92d20;
+  --color-focus: #4c8dff;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* The desk: a fine dot grid (on html, so it covers the whole canvas however long the page). */
+html {
+  background-color: var(--color-background);
+  background-image: radial-gradient(rgb(24 24 27 / 0.13) 1px, transparent 1.2px);
+  background-size: 22px 22px;
+}
+
+/* Frosted panel used by cards, modals and menus. */
+@utility glass {
+  background: var(--color-glass);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  backdrop-filter: blur(22px) saturate(1.5);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    0 0 0 0.5px rgb(0 0 0 / 0.12),
+    0 18px 40px -18px rgb(10 12 20 / 0.35);
+}
+
+/* Visible keyboard focus everywhere. */
+:where(a, button, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
