@@ -4,8 +4,17 @@ import path from "node:path";
 const require = createRequire(import.meta.url);
 const pdfjsRoot = path.dirname(require.resolve("pdfjs-dist/package.json"));
 
-/** pdfjs reads these with fs in Node: plain folder paths ending with a separator. */
-const assetDir = (name: string): string => path.join(pdfjsRoot, name) + path.sep;
+/**
+ * Folder path in the form pdfjs accepts for its factory options (cMapUrl, standardFontDataUrl…):
+ * it must end with "/" — a "\" is rejected ("Invalid factory url") — and pdfjs reads
+ * `${folder}${fileName}` with fs. Forward slashes work for fs on Windows too ("C:/…/cmaps/").
+ */
+export function toFactoryDir(dir: string, pathApi: path.PlatformPath = path): string {
+  const normalised = pathApi.normalize(dir).split(pathApi.sep).join("/");
+  return normalised.endsWith("/") ? normalised : `${normalised}/`;
+}
+
+const assetDir = (name: string): string => toFactoryDir(path.join(pdfjsRoot, name));
 
 export const pdfjsAssets = {
   cMapUrl: assetDir("cmaps"),
