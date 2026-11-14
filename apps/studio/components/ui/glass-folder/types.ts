@@ -80,7 +80,11 @@ export type GlassFolderProps = {
   onOpenChange?: (open: boolean) => void;
   /** Called when a file is chosen while the folder is open. */
   onFileSelect?: (file: FolderFile, index: number) => void;
-  /** Width in px. Everything else scales with it; the height is 0.96 × width. */
+  /**
+   * Width in px. Everything else scales with it (the stage is drawn at 340 and scaled by
+   * one transform); the height is 0.96 × width. Checked down to 280 px: in a narrow
+   * column pass `min(340, column width - 32)`.
+   */
   width?: number;
   /** Assemble itself the first time it scrolls into view. */
   appear?: boolean;

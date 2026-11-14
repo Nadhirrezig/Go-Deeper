@@ -115,3 +115,20 @@ describe("GlassFolder: labels", () => {
     expect(screen.getByRole("button", { name: "More options for Summer" })).toBeTruthy();
   });
 });
+
+describe("GlassFolder: width", () => {
+  it("scales the whole stage with width, down to 280 px", () => {
+    const { container } = render(
+      <GlassFolder label="Général" art="none" appear={false} width={280} files={[]} />,
+    );
+    const root = container.querySelector<HTMLElement>(".gf-root")!;
+    const stage = container.querySelector<HTMLElement>(".gf-stage")!;
+    const k = 280 / 340;
+    expect(root.style.width).toBe("280px");
+    // 340 × 272 stage plus 54 of headroom for the files, all scaled by k.
+    expect(parseFloat(root.style.height)).toBeCloseTo((272 + 54) * k, 3);
+    const [, y, scale] = /translateY\(([\d.]+)px\) scale\(([\d.]+)\)/.exec(stage.style.transform)!;
+    expect(Number(y)).toBeCloseTo(54 * k, 3);
+    expect(Number(scale)).toBeCloseTo(k, 5);
+  });
+});
