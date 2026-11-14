@@ -20,6 +20,9 @@
  *   --vgf-thumb-height     height of a thumbnail in the strip          84px
  *   --vgf-font             font family                                 system-ui
  *   --vgf-fullscreen-z     z-index of the fixed full-screen fallback   2147483000
+ *   --vgf-panel-width      width of the search side panel              300px
+ *   --vgf-sheet-height     height of the search bottom sheet (phones)  min(55%, 360px)
+ *   --vgf-mark-bg          background of matched words in results      #ffe066
  *
  * Size: the reader fills the width of its container. Its default height hugs the book,
  * capped at 85vh. To impose a height, set one on `.vgf-root` (or through `className`):
@@ -41,6 +44,9 @@
   --vgf-gap: 16px;
   --vgf-thumb-height: 84px;
   --vgf-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --vgf-panel-width: 300px;
+  --vgf-sheet-height: min(55%, 360px);
+  --vgf-mark-bg: #ffe066;
 
   position: relative;
   display: flex;
@@ -98,9 +104,22 @@
 
 /* ---- Stage and book -------------------------------------------------------------------- */
 
+/* Holds the stage and, when open, the search panel (side) or sheet (bottom). */
+.vgf-body {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.vgf-body[data-layout="sheet"] {
+  flex-direction: column;
+}
+
 .vgf-stage {
   position: relative;
   flex: 1 1 auto;
+  min-width: 0;
   min-height: 0;
   overflow: hidden;
   user-select: none;
@@ -435,6 +454,165 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
+/* ---- Search ---------------------------------------------------------------------------- */
+
+.vgf-search {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--vgf-toolbar-bg);
+}
+
+/* Wide readers: a panel next to the book. */
+.vgf-search[data-layout="side"] {
+  width: var(--vgf-panel-width);
+  max-width: 45%;
+  border-left: 1px solid var(--vgf-border);
+}
+
+/* Narrow readers: a bottom sheet above the toolbar (which stays visible). */
+.vgf-search[data-layout="sheet"] {
+  height: var(--vgf-sheet-height);
+  border-top: 1px solid var(--vgf-border);
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.12);
+}
+
+.vgf-search-header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 12px;
+}
+
+.vgf-search-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.vgf-search-count {
+  flex: 1 1 auto;
+  opacity: 0.7;
+  font-size: 13px;
+}
+
+.vgf-search-header .vgf-button {
+  margin-left: auto;
+}
+
+.vgf-search-field {
+  flex: none;
+  padding: 4px 12px 10px;
+}
+
+.vgf-search[data-layout="sheet"] .vgf-search-field {
+  padding: 8px 12px;
+  border-top: 1px solid var(--vgf-border);
+}
+
+.vgf-search-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--vgf-border);
+  border-radius: 8px;
+  background: var(--vgf-bg);
+  color: inherit;
+  font: inherit;
+  /* 16px keeps iOS Safari from zooming the page when the field is focused. */
+  font-size: 16px;
+}
+
+.vgf-search-input:focus-visible {
+  outline: 2px solid var(--vgf-accent);
+  outline-offset: 0;
+}
+
+.vgf-search-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.vgf-search-message,
+.vgf-search-unavailable,
+.vgf-search-capped {
+  margin: 0;
+  padding: 8px 12px;
+  opacity: 0.75;
+  font-size: 13px;
+}
+
+.vgf-search-message {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.vgf-search-results {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0 6px 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+}
+
+.vgf-search-result {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 8px 8px 10px;
+  border-left: 3px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.vgf-search-result:hover {
+  background: var(--vgf-hover);
+}
+
+/* Active row: moved to with ↑ ↓, or the last one opened. */
+.vgf-search-result[aria-selected="true"] {
+  border-left-color: var(--vgf-accent);
+  background: var(--vgf-hover);
+}
+
+.vgf-search-result-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.vgf-search-result-page {
+  font-weight: 600;
+}
+
+.vgf-search-result-matches {
+  opacity: 0.65;
+}
+
+.vgf-search-snippet {
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.vgf-search-snippet mark {
+  padding: 0 1px;
+  border-radius: 2px;
+  background: var(--vgf-mark-bg);
+  color: inherit;
+}
+
 /* ---- Toolbar --------------------------------------------------------------------------- */
 
 .vgf-toolbar {
@@ -456,11 +634,6 @@
   gap: 2px;
 }
 
-/* Empty until step 4 puts the Search and Download buttons in. */
-.vgf-toolbar-slot:empty {
-  display: none;
-}
-
 .vgf-button {
   display: inline-flex;
   flex: 0 1 40px;
@@ -475,6 +648,8 @@
   background: transparent;
   color: inherit;
   font: inherit;
+  /* Also used on the download link. */
+  text-decoration: none;
   cursor: pointer;
 }
 

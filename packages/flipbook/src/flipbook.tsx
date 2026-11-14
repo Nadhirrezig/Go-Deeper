@@ -23,6 +23,8 @@ import {
   resolveBook,
 } from "./manifest";
 import type { FlipbookErrorCode } from "./manifest";
+import type { SearchOutcome } from "./search";
+import { resultsLabel, SearchPanel } from "./search-panel";
 import { createSingleEngine } from "./single-engine";
 import { createPageSound, readSoundPreference, writeSoundPreference } from "./sound";
 import type { PageSound } from "./sound";
@@ -32,6 +34,7 @@ import { Thumbnails } from "./thumbnails";
 import { Toolbar } from "./toolbar";
 import type { FlipbookProps, FlipDirection, ResolvedBook } from "./types";
 import { useFullscreen } from "./use-fullscreen";
+import { useBookSearch } from "./use-search";
 import { MAX_ZOOM, OPEN_ZOOM, panBy, stepScale, zoomAt } from "./zoom-math";
 import type { Size, ZoomState } from "./zoom-math";
 import { ZoomOverlay } from "./zoom-overlay";
@@ -143,6 +146,8 @@ export function Flipbook(props: FlipbookProps) {
       className={className}
       startPage={props.startPage}
       sound={props.sound}
+      download={props.download ?? true}
+      search={props.search ?? true}
       onPageChange={props.onPageChange}
     />
   );
@@ -154,8 +159,13 @@ interface ReaderProps {
   className?: string;
   startPage?: number;
   sound?: boolean;
+  download: boolean;
+  search: boolean;
   onPageChange?: (page: number) => void;
 }
+
+/** Reader width from which search opens as a side panel instead of a bottom sheet. */
+export const SIDE_PANEL_MIN_WIDTH = 720;
 
 interface Point {
   x: number;
@@ -177,7 +187,16 @@ const isEditable = (target: EventTarget | null): boolean =>
   (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
 
 /** The reader itself, mounted once the manifest is loaded. Never rendered on the server. */
-function Reader({ book, labels, className, startPage, sound, onPageChange }: ReaderProps) {
+function Reader({
+  book,
+  labels,
+  className,
+  startPage,
+  sound,
+  download,
+  search: searchEnabled,
+  onPageChange,
+}: ReaderProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
@@ -207,6 +226,11 @@ function Reader({ book, labels, className, startPage, sound, onPageChange }: Rea
   const [thumbnailsOpen, setThumbnailsOpen] = useState(false);
   const [soundOn, setSoundOn] = useState(() => readSoundPreference(sound ?? true));
   const [announcement, setAnnouncement] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [wide, setWide] = useState(true);
+  const search = useBookSearch(book.search);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchButtonRef = useRef<HTMLButtonElement>(null);
   const fullscreen = useFullscreen(rootRef);
   const zoomed = zoom !== null;
 
@@ -243,6 +267,7 @@ function Reader({ book, labels, className, startPage, sound, onPageChange }: Rea
           ? previous
           : { width, height },
       );
+      setWide(root.clientWidth >= SIDE_PANEL_MIN_WIDTH);
     };
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
     observer?.observe(area);
@@ -513,7 +538,62 @@ function Reader({ book, labels, className, startPage, sound, onPageChange }: Rea
   const jumpTo = useCallback((target: number) => engine?.goTo(target), [engine]);
   const zoomIn = useCallback(() => zoomTo((scale) => stepScale(scale, 1)), [zoomTo]);
   const zoomOut = useCallback(() => zoomTo((scale) => stepScale(scale, -1)), [zoomTo]);
-  const toggleThumbnails = useCallback(() => setThumbnailsOpen((open) => !open), []);
+  const toggleThumbnails = useCallback(() => {
+    setThumbnailsOpen((open) => !open);
+    setSearchOpen(false);
+  }, []);
+
+  // --- Search ------------------------------------------------------------------------------
+  const searchLayout = wide ? "side" : "sheet";
+  const loadSearch = search.load;
+  const openSearch = useCallback(() => {
+    loadSearch(); // First open fetches search.json; later opens reuse it.
+    setSearchOpen(true);
+    setThumbnailsOpen(false);
+    // Already open (Ctrl+F again): just go back to the input.
+    searchInputRef.current?.focus();
+  }, [loadSearch]);
+  const closeSearch = useCallback(() => setSearchOpen(false), []);
+  const toggleSearch = useCallback(
+    () => (searchOpen ? closeSearch() : openSearch()),
+    [searchOpen, openSearch, closeSearch],
+  );
+
+  // Focus the input on open, and give it back to the toolbar button on close.
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (searchOpen) searchInputRef.current?.focus({ preventScroll: true });
+    else if (wasOpen.current) searchButtonRef.current?.focus({ preventScroll: true });
+    wasOpen.current = searchOpen;
+  }, [searchOpen]);
+
+  // The active row belongs to one list of results: a new list starts on its first row.
+  const outcome = search.outcome;
+  const [active, setActive] = useState<{ outcome: SearchOutcome | null; index: number }>({
+    outcome: null,
+    index: 0,
+  });
+  const activeResult = active.outcome === outcome ? active.index : 0;
+  const setActiveResult = useCallback((index: number) => setActive({ outcome, index }), [outcome]);
+
+  const selectResult = useCallback(
+    (index: number) => {
+      const result = outcome?.results[index];
+      if (!result) return;
+      setActiveResult(index);
+      jumpTo(result.page);
+      // Bottom sheet: get out of the way of the page. Side panel: stays open.
+      if (searchLayout === "sheet") closeSearch();
+    },
+    [outcome, setActiveResult, jumpTo, searchLayout, closeSearch],
+  );
+
+  const searchAnnouncement =
+    !searchOpen || !outcome
+      ? ""
+      : outcome.total === 0
+        ? labels.searchNoResults
+        : resultsLabel(labels, outcome.total);
   const toggleSound = useCallback(() => {
     const next = !live.current.soundOn;
     writeSoundPreference(next);
@@ -526,8 +606,14 @@ function Reader({ book, labels, className, startPage, sound, onPageChange }: Rea
     delete event.currentTarget.dataset.pointerFocus;
     const action = keyToAction(event, { zoomed, editing: isEditable(event.target) });
     if (!action) return;
-    if (action === "escape") {
-      if (zoomed) setZoom(null);
+    if (action === "search") {
+      // Search turned off: let the browser's own find run.
+      if (!searchEnabled) return;
+      openSearch();
+    } else if (action === "escape") {
+      const inSearch = event.target instanceof Element && event.target.closest(".vgf-search");
+      if (searchOpen && (inSearch || !zoomed)) closeSearch();
+      else if (zoomed) setZoom(null);
       else if (thumbnailsOpen) setThumbnailsOpen(false);
       else if (fullscreen.fixed) fullscreen.exit();
       else return; // Native fullscreen: the browser handles Escape itself.
@@ -564,62 +650,85 @@ function Reader({ book, labels, className, startPage, sound, onPageChange }: Rea
       data-status={failed ? "error" : engine ? "ready" : "loading"}
       data-mode={mode}
       data-zoomed={zoomed ? "true" : "false"}
+      data-search={searchOpen ? searchLayout : undefined}
       onKeyDown={onKeyDown}
     >
-      <div
-        ref={stageRef}
-        className="vgf-stage"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerEnd}
-        onPointerCancel={onPointerEnd}
-        onClick={onStageClick}
-      >
-        <div ref={areaRef} className="vgf-book-area">
-          <div className="vgf-book-shift" data-shift={shift}>
-            {/* Owned by the engine: React renders nothing inside. */}
-            <div ref={hostRef} className="vgf-book-host" />
+      {/* Stage and search panel share this row (side panel) or column (bottom sheet): the
+          book area shrinks when the panel opens and the book re-fits (ResizeObserver). */}
+      <div className="vgf-body" data-layout={searchLayout}>
+        <div
+          ref={stageRef}
+          className="vgf-stage"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerEnd}
+          onPointerCancel={onPointerEnd}
+          onClick={onStageClick}
+        >
+          <div ref={areaRef} className="vgf-book-area">
+            <div className="vgf-book-shift" data-shift={shift}>
+              {/* Owned by the engine: React renders nothing inside. */}
+              <div ref={hostRef} className="vgf-book-host" />
+            </div>
+            {!engine && !failed && layout && (
+              <div
+                className="vgf-skeleton"
+                role="status"
+                style={{ width: layout.bookWidth, height: layout.pageHeight }}
+              >
+                <span className="vgf-sr-only">{labels.loading}</span>
+              </div>
+            )}
+            {failed && (
+              <div className="vgf-error" role="alert">
+                <p>{labels.errorLoad}</p>
+              </div>
+            )}
           </div>
-          {!engine && !failed && layout && (
-            <div
-              className="vgf-skeleton"
-              role="status"
-              style={{ width: layout.bookWidth, height: layout.pageHeight }}
-            >
-              <span className="vgf-sr-only">{labels.loading}</span>
-            </div>
+
+          {zoom && layout && (
+            <ZoomOverlay
+              pages={book.pages.slice(spread[0] - 1, spread[1])}
+              pageWidth={layout.pageWidth}
+              pageHeight={layout.pageHeight}
+              zoom={zoom}
+              labels={labels}
+            />
           )}
-          {failed && (
-            <div className="vgf-error" role="alert">
-              <p>{labels.errorLoad}</p>
-            </div>
+
+          {thumbnailsOpen && !zoomed && (
+            <Thumbnails book={book} spread={spread} labels={labels} onSelect={jumpTo} />
+          )}
+
+          {fullscreen.fixed && (
+            <button
+              type="button"
+              className="vgf-button vgf-close"
+              aria-label={labels.close}
+              title={labels.close}
+              onClick={fullscreen.exit}
+            >
+              <IconClose />
+            </button>
           )}
         </div>
 
-        {zoom && layout && (
-          <ZoomOverlay
-            pages={book.pages.slice(spread[0] - 1, spread[1])}
-            pageWidth={layout.pageWidth}
-            pageHeight={layout.pageHeight}
-            zoom={zoom}
+        {searchOpen && searchEnabled && (
+          <SearchPanel
             labels={labels}
+            layout={searchLayout}
+            status={search.status}
+            query={search.query}
+            outcome={outcome}
+            tooShort={search.tooShort}
+            activeIndex={activeResult}
+            inputRef={searchInputRef}
+            onQuery={search.setQuery}
+            onActive={setActiveResult}
+            onSelect={selectResult}
+            onRetry={search.retry}
+            onClose={closeSearch}
           />
-        )}
-
-        {thumbnailsOpen && !zoomed && (
-          <Thumbnails book={book} spread={spread} labels={labels} onSelect={jumpTo} />
-        )}
-
-        {fullscreen.fixed && (
-          <button
-            type="button"
-            className="vgf-button vgf-close"
-            aria-label={labels.close}
-            title={labels.close}
-            onClick={fullscreen.exit}
-          >
-            <IconClose />
-          </button>
         )}
       </div>
 
@@ -634,6 +743,12 @@ function Reader({ book, labels, className, startPage, sound, onPageChange }: Rea
         thumbnailsOpen={thumbnailsOpen}
         fullscreen={fullscreen.active}
         soundOn={soundOn}
+        search={
+          searchEnabled
+            ? { open: searchOpen, onToggle: toggleSearch, buttonRef: searchButtonRef }
+            : null
+        }
+        download={download ? { href: book.pdf, fileName: `${book.slug || "document"}.pdf` } : null}
         onPrevious={goPrevious}
         onNext={goNext}
         onJump={jumpTo}
@@ -646,6 +761,9 @@ function Reader({ book, labels, className, startPage, sound, onPageChange }: Rea
 
       <div className="vgf-sr-only" aria-live="polite" aria-atomic="true">
         {announcement}
+      </div>
+      <div className="vgf-sr-only" aria-live="polite" aria-atomic="true">
+        {searchAnnouncement}
       </div>
     </div>
   );
