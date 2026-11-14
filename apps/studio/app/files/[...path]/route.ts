@@ -19,9 +19,12 @@ export async function GET(
 
   try {
     // Symbolic links must not lead outside the storage folder either.
-    const [realRoot, realFile] = await Promise.all([realpath(root), realpath(target.file)]);
+    const [realRoot, realFile] = await Promise.all([
+      realpath(/*turbopackIgnore: true*/ root),
+      realpath(/*turbopackIgnore: true*/ target.file),
+    ]);
     if (!realFile.startsWith(realRoot + path.sep)) return notFound();
-    const info = await stat(realFile);
+    const info = await stat(/*turbopackIgnore: true*/ realFile);
     if (!info.isFile()) return notFound();
 
     const lastModified = new Date(Math.floor(info.mtimeMs / 1000) * 1000);
@@ -41,7 +44,9 @@ export async function GET(
     }
 
     headers.set("Content-Length", String(info.size));
-    const body = Readable.toWeb(createReadStream(realFile)) as ReadableStream<Uint8Array>;
+    const body = Readable.toWeb(
+      createReadStream(/*turbopackIgnore: true*/ realFile),
+    ) as ReadableStream<Uint8Array>;
     return new Response(body, { status: 200, headers });
   } catch {
     return notFound();

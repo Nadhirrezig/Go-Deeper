@@ -12,7 +12,10 @@ export const dynamic = "force-dynamic";
 
 export default async function DevBookPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  if (!isSafeSegment(id) || !existsSync(path.join(getStorageDir(), id, "manifest.json"))) {
+  if (
+    !isSafeSegment(id) ||
+    !existsSync(/*turbopackIgnore: true*/ path.join(getStorageDir(), id, "manifest.json"))
+  ) {
     notFound();
   }
   return (

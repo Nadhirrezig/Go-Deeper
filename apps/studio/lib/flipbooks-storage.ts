@@ -16,11 +16,14 @@ const SAFE_SEGMENT = /^[A-Za-z0-9_-][A-Za-z0-9._-]*$/;
 export const isSafeSegment = (segment: string): boolean =>
   SAFE_SEGMENT.test(segment) && !segment.includes("..");
 
+// Book files are read at run time from a folder chosen by the user (FLIPBOOKS_DIR), never
+// bundled: `turbopackIgnore` stops Next from tracing the whole project for these fs calls.
+
 /** Walk up from `start` to the folder holding `pnpm-workspace.yaml`. */
 function findRepoRoot(start: string): string {
   let dir = start;
   for (;;) {
-    if (existsSync(path.join(dir, "pnpm-workspace.yaml"))) return dir;
+    if (existsSync(/*turbopackIgnore: true*/ path.join(dir, "pnpm-workspace.yaml"))) return dir;
     const parent = path.dirname(dir);
     if (parent === dir) return start;
     dir = parent;
@@ -68,7 +71,7 @@ export interface BookSummary {
 export async function listBooks(root: string = getStorageDir()): Promise<BookSummary[]> {
   let entries: string[];
   try {
-    entries = await readdir(root);
+    entries = await readdir(/*turbopackIgnore: true*/ root);
   } catch {
     return [];
   }
@@ -76,7 +79,10 @@ export async function listBooks(root: string = getStorageDir()): Promise<BookSum
   for (const id of entries) {
     if (!isSafeSegment(id)) continue;
     try {
-      const raw = await readFile(path.join(root, id, "manifest.json"), "utf8");
+      const raw = await readFile(
+        /*turbopackIgnore: true*/ path.join(root, id, "manifest.json"),
+        "utf8",
+      );
       const manifest = JSON.parse(raw) as FlipbookManifest;
       books.push({
         id,
