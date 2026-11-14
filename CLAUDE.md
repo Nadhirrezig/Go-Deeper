@@ -82,6 +82,12 @@ export interface FlipbookManifest {
 ```
 All paths in the manifest are relative to the manifest's own URL. The reader resolves them against a `baseUrl`. Change this contract only when a step says so.
 
+## Notes for step 6
+
+- Upload `original.pdf` with `Content-Disposition: attachment; filename="<slug>.pdf"`. The reader's
+  Download button is a plain link with a `download` attribute, which browsers ignore on
+  cross-origin URLs (the CDN): this header is what names the file and forces the download there.
+
 ## Stack and approved dependencies
 
 - Node.js 22 LTS, pnpm 9+, TypeScript `strict`

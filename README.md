@@ -88,7 +88,7 @@ import "@vipgroup/flipbook/styles.css";
 <Flipbook manifestUrl="https://cdn.example.com/flipbooks/<id>/manifest.json" />;
 // or: <Flipbook manifest={manifest} baseUrl="https://cdn.example.com/flipbooks/<id>/" />
 // options: startPage, sound, labels (French by default, labelsEn exported), className,
-//          onPageChange(page), onReady(manifest)
+//          download, search, onPageChange(page), onReady(manifest)
 ```
 
 Works in a Next.js server page without `dynamic(..., { ssr: false })`. The reader fills the
@@ -96,8 +96,18 @@ width of its container; its height hugs the book up to 85vh, or set one with `cl
 Theme it with the `--vgf-*` CSS variables listed at the top of
 `packages/flipbook/src/styles.css`.
 
-Reader keys (only while the reader has focus): ← → turn · Home / End · + / − zoom · Esc closes
-zoom, thumbnails or full screen.
+| Prop       | Default | Effect                                                                    |
+| ---------- | ------- | ------------------------------------------------------------------------- |
+| `download` | `true`  | Toolbar button that downloads the original PDF as `<slug>.pdf`            |
+| `search`   | `true`  | Toolbar button and in-book search (`search.json` is loaded on first open) |
+
+Search ignores case and accents (`ete` finds "Été") and Arabic harakat; with several words it
+finds pages containing all of them. It opens as a side panel when the reader is at least 720px
+wide, as a bottom sheet below that.
+
+Reader keys (only while the reader has focus): ← → turn · Home / End · + / − zoom ·
+Ctrl/Cmd+F search (↑ ↓ choose a result, Enter opens it) · Esc closes search, zoom, thumbnails or
+full screen. Outside the reader, Ctrl/Cmd+F stays the browser's own find.
 
 ## Open the studio from another device (office Wi-Fi)
 
