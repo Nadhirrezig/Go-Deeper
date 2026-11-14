@@ -8,6 +8,7 @@ export {
 export { ConverterError, isConverterError } from "./errors";
 export type { ConverterErrorCode } from "./errors";
 export { slugify } from "./slugify";
+export type { WorkerJob, WorkerMessage } from "./worker-protocol";
 export type {
   ConvertOptions,
   ConvertProgressEvent,

@@ -9,7 +9,8 @@
       "@vipgroup/source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./worker": "./dist/worker.js"
   },
   "files": [
     "dist"
