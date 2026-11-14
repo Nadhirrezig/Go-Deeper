@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Test output
+coverage/
+
+# Env files (only the example is committed)
+.env*
+!.env.example
+
+# Local flipbook storage (until cloud storage in step 6)
+storage/
+
+# Logs / OS / editors
+*.log
+.DS_Store
+.vscode/
+.idea/
