@@ -1,0 +1,5 @@
+# Keep LF in the repo and in checkouts, so Prettier and the tooling agree on Windows too.
+* text=auto eol=lf
+*.webp binary
+*.pdf binary
+*.png binary
