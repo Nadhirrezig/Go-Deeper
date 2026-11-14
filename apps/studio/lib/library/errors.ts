@@ -9,7 +9,10 @@ export type LibraryErrorCode =
   | "BOOK_BUSY";
 
 /** A rule of the library was broken. `message` is French, ready to show to the team. */
+const BRAND = Symbol.for("vipgroup.studio.LibraryError");
+
 export class LibraryError extends Error {
+  readonly [BRAND] = true;
   readonly code: LibraryErrorCode;
   /** For SLUG_TAKEN: a free slug to offer instead. */
   readonly suggestion?: string;
@@ -22,5 +25,9 @@ export class LibraryError extends Error {
   }
 }
 
+/**
+ * Not `instanceof`: Next.js can load this module twice (the services created at start-up and
+ * a route or action bundle each get their own copy of the class), so check a shared brand.
+ */
 export const isLibraryError = (error: unknown): error is LibraryError =>
-  error instanceof LibraryError;
+  error instanceof Error && (error as { [BRAND]?: boolean })[BRAND] === true;

@@ -2,7 +2,8 @@ import { rm } from "node:fs/promises";
 import path from "node:path";
 import { folderSize } from "../library/book-files";
 import type { LibraryRepository } from "../library/repository";
-import { ConversionFailure, conversionMessage } from "./errors";
+import { conversionMessage } from "./errors";
+import type { ConversionFailure } from "./errors";
 
 export interface ConversionJob {
   /** Book record id, also the book folder name. */
@@ -105,7 +106,11 @@ export class ConversionQueue {
       });
     } catch (error) {
       await progressWrites;
-      const code = error instanceof ConversionFailure ? error.code : "UNEXPECTED";
+      // By name, not instanceof (Next.js may hold two copies of the class).
+      const code =
+        error instanceof Error && error.name === "ConversionFailure"
+          ? (error as ConversionFailure).code
+          : "UNEXPECTED";
       await repo
         .updateBook(job.bookId, {
           status: "failed",
