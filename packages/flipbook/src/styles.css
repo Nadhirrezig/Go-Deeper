@@ -1,20 +1,490 @@
 /*
- * @vipgroup/flipbook styles.
- * Every class is prefixed `vgf-`; theme through `--vgf-*` CSS variables.
- * Must not depend on the host app's Tailwind config.
+ * @vipgroup/flipbook — reader styles.
+ *
+ * Plain CSS, no Tailwind needed in the host app. Every class is prefixed `vgf-`.
+ * (Classes starting with `stf__` and `--left` / `--right` / `--simple` are set by page-flip.)
+ *
+ * Theme with CSS variables, on `.vgf-root` or any ancestor:
+ *
+ *   --vgf-bg               reader background, around the book          #eceef1
+ *   --vgf-text             text and icon colour                        #1f2328
+ *   --vgf-accent           active toggles, focus ring, current thumb   #1f6feb
+ *   --vgf-toolbar-bg       toolbar and thumbnail strip background      #ffffff
+ *   --vgf-toolbar-height   toolbar height                              48px
+ *   --vgf-border           hairlines                                   rgba(0, 0, 0, 0.1)
+ *   --vgf-hover            button hover background                     rgba(0, 0, 0, 0.07)
+ *   --vgf-radius           corner radius of the reader                 10px
+ *   --vgf-shadow           shadow under the pages                      0 10px 30px rgba(0, 0, 0, 0.22)
+ *   --vgf-page-bg          page colour while its image loads           #ffffff
+ *   --vgf-gap              space between the book and the reader edge  16px
+ *   --vgf-thumb-height     height of a thumbnail in the strip          84px
+ *   --vgf-font             font family                                 system-ui
+ *   --vgf-fullscreen-z     z-index of the fixed full-screen fallback   2147483000
+ *
+ * Size: the reader fills the width of its container. Its default height hugs the book,
+ * capped at 85vh. To impose a height, set one on `.vgf-root` (or through `className`):
+ *   .my-reader { height: 600px; }
+ * (`--vgf-natural-height` is set by the component; do not set it yourself.)
  */
-.vgf-root {
-  --vgf-bg: #f4f4f5;
-  --vgf-fg: #18181b;
-  --vgf-radius: 8px;
 
+.vgf-root {
+  --vgf-bg: #eceef1;
+  --vgf-text: #1f2328;
+  --vgf-accent: #1f6feb;
+  --vgf-toolbar-bg: #ffffff;
+  --vgf-toolbar-height: 48px;
+  --vgf-border: rgba(0, 0, 0, 0.1);
+  --vgf-hover: rgba(0, 0, 0, 0.07);
+  --vgf-radius: 10px;
+  --vgf-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+  --vgf-page-bg: #ffffff;
+  --vgf-gap: 16px;
+  --vgf-thumb-height: 84px;
+  --vgf-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  height: min(85vh, var(--vgf-natural-height, 85vh));
+  overflow: hidden;
+  border-radius: var(--vgf-radius);
+  background: var(--vgf-bg);
+  color: var(--vgf-text);
+  font-family: var(--vgf-font);
+  font-size: 14px;
+  line-height: 1.4;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.vgf-root *,
+.vgf-root *::before,
+.vgf-root *::after {
+  box-sizing: border-box;
+}
+
+.vgf-root:focus {
+  outline: none;
+}
+
+.vgf-root:focus-visible {
+  outline: 2px solid var(--vgf-accent);
+  outline-offset: 2px;
+}
+
+/* Focused by a click or a tap (set by the component): no ring around the whole reader. */
+.vgf-root[data-pointer-focus]:focus-visible {
+  outline: none;
+}
+
+/* ---- Fullscreen ------------------------------------------------------------------------ */
+
+.vgf-root--fullscreen,
+.vgf-root:fullscreen {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+/* Fallback where the Fullscreen API is missing (iPhone Safari): fixed, full viewport. */
+.vgf-root--fixed {
+  position: fixed;
+  inset: 0;
+  z-index: var(--vgf-fullscreen-z, 2147483000);
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* ---- Stage and book -------------------------------------------------------------------- */
+
+.vgf-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* The book is fitted inside this box (measured by the component). */
+.vgf-book-area {
+  position: absolute;
+  inset: var(--vgf-gap);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
-  padding: 1rem;
-  border-radius: var(--vgf-radius);
+}
+
+/* Slides a lone cover to the centre in two-page mode. */
+.vgf-book-shift {
+  flex: none;
+  transition: transform 0.35s ease;
+}
+
+.vgf-book-shift[data-shift="front"] {
+  transform: translateX(-25%);
+}
+
+.vgf-book-shift[data-shift="back"] {
+  transform: translateX(25%);
+}
+
+.vgf-book {
+  position: relative;
+}
+
+.vgf-page {
+  overflow: hidden;
+  background: var(--vgf-page-bg);
+}
+
+/* Pages at rest (not being turned). */
+.vgf-page.--simple {
+  box-shadow: var(--vgf-shadow);
+}
+
+/* Soft fold shadow along the spine. */
+.vgf-page::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8%;
+  pointer-events: none;
+}
+
+.vgf-page.--left::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0));
+}
+
+.vgf-page.--right::after {
+  left: 0;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0));
+}
+
+.vgf-page-thumb,
+.vgf-page-img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Empty placeholders: no broken-image icon, no alt text box. */
+.vgf-page-thumb:not([src]),
+.vgf-page-img:not([src]) {
+  visibility: hidden;
+}
+
+/* The standard image fades in over its thumb once loaded. */
+.vgf-page-img {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.vgf-page-img.vgf-loaded {
+  opacity: 1;
+}
+
+/* ---- Loading and error ----------------------------------------------------------------- */
+
+.vgf-skeleton {
+  position: absolute;
+  border-radius: 2px;
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.55) 30%,
+    rgba(255, 255, 255, 0.95) 50%,
+    rgba(255, 255, 255, 0.55) 70%
+  );
+  background-size: 200% 100%;
+  animation: vgf-shimmer 1.4s linear infinite;
+}
+
+/* Before the manifest is known: two A4 pages. */
+.vgf-skeleton--generic {
+  inset: var(--vgf-gap);
+  height: calc(100% - 2 * var(--vgf-gap));
+  max-width: calc(100% - 2 * var(--vgf-gap));
+  margin: auto;
+  aspect-ratio: 1.414;
+}
+
+@keyframes vgf-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.vgf-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+.vgf-error p {
+  margin: 0;
+}
+
+/* ---- Zoom overlay ---------------------------------------------------------------------- */
+
+.vgf-zoom {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   background: var(--vgf-bg);
-  color: var(--vgf-fg);
-  font-family: system-ui, sans-serif;
+  cursor: grab;
+  touch-action: none;
+}
+
+.vgf-zoom:active {
+  cursor: grabbing;
+}
+
+.vgf-zoom-content {
+  display: flex;
+  flex: none;
+  transform-origin: center;
+  box-shadow: var(--vgf-shadow);
+  will-change: transform;
+}
+
+.vgf-zoom-page {
+  position: relative;
+  flex: 1 1 0;
+  height: 100%;
+  background: var(--vgf-page-bg);
+}
+
+.vgf-zoom-base,
+.vgf-zoom-img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* ---- Thumbnails strip ------------------------------------------------------------------ */
+
+.vgf-thumbs {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 6;
+  padding: 8px;
+  border-top: 1px solid var(--vgf-border);
+  background: var(--vgf-toolbar-bg);
+}
+
+.vgf-thumbs-strip {
+  position: relative;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px;
+  scrollbar-width: thin;
+  touch-action: pan-x;
+}
+
+.vgf-thumb {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.vgf-thumb:hover {
+  background: var(--vgf-hover);
+}
+
+.vgf-thumb[aria-current="page"] {
+  border-color: var(--vgf-accent);
+}
+
+.vgf-thumb:focus-visible {
+  outline: 2px solid var(--vgf-accent);
+  outline-offset: 1px;
+}
+
+.vgf-thumb-img {
+  display: block;
+  width: auto;
+  height: var(--vgf-thumb-height);
+  background: var(--vgf-page-bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* ---- Toolbar --------------------------------------------------------------------------- */
+
+.vgf-toolbar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: var(--vgf-toolbar-height);
+  padding: 0 8px;
+  border-top: 1px solid var(--vgf-border);
+  background: var(--vgf-toolbar-bg);
+}
+
+.vgf-toolbar-group {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 2px;
+}
+
+/* Empty until step 4 puts the Search and Download buttons in. */
+.vgf-toolbar-slot:empty {
+  display: none;
+}
+
+.vgf-button {
+  display: inline-flex;
+  flex: 0 1 40px;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  min-width: 30px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.vgf-button:hover:not(:disabled) {
+  background: var(--vgf-hover);
+}
+
+.vgf-button:focus-visible {
+  outline: 2px solid var(--vgf-accent);
+  outline-offset: -2px;
+}
+
+.vgf-button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.vgf-button[aria-pressed="true"] {
+  color: var(--vgf-accent);
+}
+
+.vgf-button--text {
+  flex: none;
+  width: auto;
+  padding: 0 14px;
+  border: 1px solid var(--vgf-border);
+  background: var(--vgf-toolbar-bg);
+}
+
+.vgf-icon {
+  display: block;
+}
+
+/* Close button of the fixed full-screen fallback. */
+.vgf-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  background: var(--vgf-toolbar-bg);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.vgf-indicator {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.vgf-page-input {
+  height: 30px;
+  padding: 0 4px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  /* 16px keeps iOS Safari from zooming the page when the field is focused. */
+  font-size: 16px;
+  text-align: center;
+}
+
+.vgf-page-input:hover:not(:disabled),
+.vgf-page-input:focus {
+  border-color: var(--vgf-border);
+  background: var(--vgf-hover);
+}
+
+.vgf-page-input:focus-visible {
+  outline: 2px solid var(--vgf-accent);
+  outline-offset: 0;
+}
+
+.vgf-page-total {
+  opacity: 0.7;
+}
+
+/* ---- Utilities ------------------------------------------------------------------------- */
+
+.vgf-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vgf-book-shift,
+  .vgf-page-img {
+    transition: none;
+  }
+
+  .vgf-skeleton {
+    animation: none;
+  }
 }
