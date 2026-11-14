@@ -50,9 +50,11 @@ describe("hitZone", () => {
     expect(hitZone(300, 350, double, "double")).toBe("middle");
   });
 
-  it("has only right corners in single mode", () => {
-    expect(hitZone(490, 690, single, "single")).toBe("corner");
+  it("has a wide tap zone on each side and no corners in single mode", () => {
+    expect(hitZone(490, 690, single, "single")).toBe("next");
+    expect(hitZone(400, 350, single, "single")).toBe("next");
     expect(hitZone(10, 690, single, "single")).toBe("prev");
+    expect(hitZone(100, 10, single, "single")).toBe("prev");
     expect(hitZone(250, 350, single, "single")).toBe("middle");
   });
 

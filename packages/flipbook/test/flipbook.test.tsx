@@ -28,6 +28,8 @@ function stubFetch(response: () => Response | Promise<Response>) {
 async function readyInstance() {
   await waitFor(() => {
     expect(document.querySelector('.vgf-root[data-status="ready"]')).not.toBeNull();
+    // The load plan is applied by an effect right after that render: wait for it too.
+    expect(document.querySelector(".vgf-page-img[src]")).not.toBeNull();
   });
   const live = fake.instances.filter((instance) => !instance.destroyed);
   expect(live).toHaveLength(1);
@@ -310,6 +312,24 @@ describe("<Flipbook />", () => {
     expect(pageImage(6).getAttribute("src")).toBe(
       "https://cdn.example.com/books/xyz/pages/006.webp",
     );
+  });
+
+  it("uses its own page turn, not page-flip, on a phone in portrait", async () => {
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(390);
+    vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(640);
+    stubFetch(() => jsonResponse(makeManifest(6)));
+    const user = userEvent.setup();
+    render(<Flipbook manifestUrl={MANIFEST_URL} />);
+
+    await waitFor(() => {
+      expect(document.querySelector('.vgf-root[data-status="ready"]')).not.toBeNull();
+    });
+    expect(document.querySelector(".vgf-root")?.getAttribute("data-mode")).toBe("single");
+    expect(document.querySelector(".vgf-book--single")).not.toBeNull();
+    expect(fake.instances).toHaveLength(0);
+
+    await user.click(screen.getByRole("button", { name: "Page suivante" }));
+    await waitFor(() => expect(indicator().value).toBe("2"), { timeout: 2000 });
   });
 
   it("leaves marked slots for the step 4 buttons", async () => {

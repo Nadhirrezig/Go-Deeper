@@ -23,6 +23,7 @@ import {
   resolveBook,
 } from "./manifest";
 import type { FlipbookErrorCode } from "./manifest";
+import { createSingleEngine } from "./single-engine";
 import { createPageSound, readSoundPreference, writeSoundPreference } from "./sound";
 import type { PageSound } from "./sound";
 import { clampPage, formatSpread, neighbourSpread, spreadForPage } from "./spread";
@@ -254,7 +255,10 @@ function Reader({ book, labels, className, startPage, sound, onPageChange }: Rea
     };
   }, [pageRatio]);
 
-  // --- Engine: one page-flip instance per mounted book ------------------------------------
+  // --- Engine: page-flip for two pages, our own page turn for one page --------------------
+  // page-flip's one-page mode turns a clone of the page (same image on both sides) and runs
+  // backward turns off screen; phones in portrait get `createSingleEngine` instead.
+  // A mode change (rotating the phone, resizing) rebuilds the engine at the current page.
   useEffect(() => {
     const host = hostRef.current;
     const initialLayout = live.current.layout;
@@ -264,7 +268,8 @@ function Reader({ book, labels, className, startPage, sound, onPageChange }: Rea
 
     const spreadOf = (first: number): Spread => spreadForPage(first, pageCount, live.current.mode);
 
-    void createBookEngine(
+    const createEngine = mode === "single" ? createSingleEngine : createBookEngine;
+    void createEngine(
       {
         host,
         book,
@@ -319,8 +324,9 @@ function Reader({ book, labels, className, startPage, sound, onPageChange }: Rea
       cancelled = true;
       created?.destroy();
       setEngine((current) => (current === created ? null : current));
+      setEngineState("read");
     };
-  }, [book, hasLayout, pageCount]);
+  }, [book, hasLayout, pageCount, mode]);
 
   useEffect(() => {
     if (engine && layout) engine.setLayout(layout);
@@ -493,7 +499,7 @@ function Reader({ book, labels, className, startPage, sound, onPageChange }: Rea
       { width: rect.width, height: rect.height, pageWidth: layout.pageWidth },
       layout.mode,
     );
-    // Corners are handled by page-flip itself.
+    // Corners are handled by page-flip itself (two-page mode only).
     if (zone === "prev") engine.prev();
     else if (zone === "next") engine.next();
     else if (zone === "middle" && doubleTap) {
