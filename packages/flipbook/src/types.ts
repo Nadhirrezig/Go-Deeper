@@ -35,6 +35,10 @@ interface FlipbookCommonProps {
   /** UI text overrides. French by default; `labelsEn` is exported too. */
   labels?: Partial<FlipbookLabels>;
   className?: string;
+  /** Show the button that downloads the original PDF (as `<slug>.pdf`). Default true. */
+  download?: boolean;
+  /** Show in-book search (toolbar button, Ctrl/Cmd+F while the reader has focus). Default true. */
+  search?: boolean;
   /** Called with the first visible page (1-based) each time the visible spread changes. */
   onPageChange?: (page: number) => void;
   onReady?: (manifest: FlipbookManifest) => void;

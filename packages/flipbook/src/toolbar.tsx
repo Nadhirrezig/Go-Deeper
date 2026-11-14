@@ -1,10 +1,12 @@
 import { memo } from "react";
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 import {
+  IconDownload,
   IconExitFullscreen,
   IconFullscreen,
   IconNext,
   IconPrevious,
+  IconSearch,
   IconSoundOff,
   IconSoundOn,
   IconThumbnails,
@@ -21,12 +23,21 @@ interface ToolbarButtonProps {
   disabled?: boolean;
   /** Set for toggle buttons. */
   pressed?: boolean;
+  buttonRef?: RefObject<HTMLButtonElement | null>;
   children: ReactNode;
 }
 
-function ToolbarButton({ label, onClick, disabled, pressed, children }: ToolbarButtonProps) {
+function ToolbarButton({
+  label,
+  onClick,
+  disabled,
+  pressed,
+  buttonRef,
+  children,
+}: ToolbarButtonProps) {
   return (
     <button
+      ref={buttonRef}
       type="button"
       className="vgf-button"
       aria-label={label}
@@ -52,6 +63,14 @@ export interface ToolbarProps {
   thumbnailsOpen: boolean;
   fullscreen: boolean;
   soundOn: boolean;
+  /** Search button; hidden when null (`search={false}`). */
+  search: {
+    open: boolean;
+    onToggle: () => void;
+    buttonRef: RefObject<HTMLButtonElement | null>;
+  } | null;
+  /** Download link to the original PDF; hidden when null (`download={false}`). */
+  download: { href: string; fileName: string } | null;
   onPrevious: () => void;
   onNext: () => void;
   onJump: (page: number) => void;
@@ -114,10 +133,31 @@ export const Toolbar = memo(function Toolbar(props: ToolbarProps) {
           <IconZoomIn />
         </ToolbarButton>
 
-        {/* Step 4 slot: Search button goes here. */}
-        <span className="vgf-toolbar-slot" data-slot="search" />
-        {/* Step 4 slot: PDF download button goes here. */}
-        <span className="vgf-toolbar-slot" data-slot="download" />
+        {props.search && (
+          <ToolbarButton
+            label={labels.search}
+            onClick={props.search.onToggle}
+            pressed={props.search.open}
+            disabled={!props.ready}
+            buttonRef={props.search.buttonRef}
+          >
+            <IconSearch />
+          </ToolbarButton>
+        )}
+        {props.download && (
+          // A plain link: the browser streams the file itself (nothing loaded into memory).
+          // `download` names the file, but browsers ignore it for cross-origin URLs, where
+          // the server's Content-Disposition header decides (see CLAUDE.md, step 6 notes).
+          <a
+            className="vgf-button"
+            href={props.download.href}
+            download={props.download.fileName}
+            aria-label={labels.download}
+            title={labels.download}
+          >
+            <IconDownload />
+          </a>
+        )}
 
         <ToolbarButton
           label={props.fullscreen ? labels.exitFullscreen : labels.fullscreen}

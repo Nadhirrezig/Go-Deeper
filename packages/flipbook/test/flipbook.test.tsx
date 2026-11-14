@@ -332,11 +332,24 @@ describe("<Flipbook />", () => {
     await waitFor(() => expect(indicator().value).toBe("2"), { timeout: 2000 });
   });
 
-  it("leaves marked slots for the step 4 buttons", async () => {
+  it("offers the original PDF as a <slug>.pdf download", async () => {
     stubFetch(() => jsonResponse(makeManifest(4)));
     render(<Flipbook manifestUrl={MANIFEST_URL} />);
     await readyInstance();
-    expect(document.querySelector('.vgf-toolbar-slot[data-slot="search"]')).not.toBeNull();
-    expect(document.querySelector('.vgf-toolbar-slot[data-slot="download"]')).not.toBeNull();
+    const link = screen.getByRole("link", { name: "Télécharger le PDF" });
+    expect(link.getAttribute("href")).toBe(`${BASE}original.pdf`);
+    expect(link.getAttribute("download")).toBe("test-book.pdf");
+  });
+
+  it("hides the download and search buttons when turned off", async () => {
+    stubFetch(() => jsonResponse(makeManifest(4)));
+    render(<Flipbook manifestUrl={MANIFEST_URL} download={false} search={false} />);
+    await readyInstance();
+    expect(screen.queryByRole("link", { name: "Télécharger le PDF" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Rechercher" })).toBeNull();
+    // Ctrl+F then belongs to the browser even inside the reader.
+    const root = screen.getByRole("region", { name: "Test book" });
+    root.focus();
+    expect(fireEvent.keyDown(root, { key: "f", ctrlKey: true })).toBe(true);
   });
 });
