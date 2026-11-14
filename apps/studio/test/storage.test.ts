@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { GET } from "../app/files/[...path]/route";
-import { getFlipbooksDir, listBooks, resolveStorageFile } from "../lib/storage";
+import { getFlipbooksDir, resolveStorageFile } from "../lib/storage";
 
 let work: string;
 let storage: string;
@@ -170,17 +170,5 @@ describe("GET /files/[...path]", () => {
     if (!canSymlink) context.skip();
     const response = await get(["book-a", "link.json"]);
     expect(response.status).toBe(404);
-  });
-});
-
-describe("listBooks", () => {
-  it("lists finished books, newest first, and skips unfinished folders", async () => {
-    const books = await listBooks(storage);
-    expect(books.map((book) => book.title)).toEqual(["Livre B", "Livre A"]);
-    expect(books[0]).toMatchObject({ id: "book-b", pageCount: 2 });
-  });
-
-  it("returns an empty list when the folder does not exist", async () => {
-    expect(await listBooks(path.join(work, "nope"))).toEqual([]);
   });
 });

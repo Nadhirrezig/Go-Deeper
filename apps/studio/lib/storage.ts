@@ -1,7 +1,5 @@
 import { existsSync } from "node:fs";
-import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import type { FlipbookManifest } from "@vipgroup/shared";
 
 /** File types a book folder contains; anything else is not served. */
 const CONTENT_TYPES: Record<string, string> = {
@@ -60,9 +58,6 @@ export function getUploadsDir(): string {
   return path.join(getStorageRoot(), "uploads");
 }
 
-/** @deprecated Use getFlipbooksDir. Kept for the temporary /dev pages. */
-export const getStorageDir = getFlipbooksDir;
-
 export interface StorageFile {
   file: string;
   contentType: string;
@@ -81,41 +76,4 @@ export function resolveStorageFile(root: string, segments: readonly string[]): S
   if (!file.startsWith(base + path.sep)) return null;
   const contentType = CONTENT_TYPES[path.extname(file).toLowerCase()];
   return contentType ? { file, contentType } : null;
-}
-
-export interface BookSummary {
-  id: string;
-  title: string;
-  pageCount: number;
-  createdAt: string;
-}
-
-/** Books found in the storage folder, newest first. Broken folders are skipped. */
-export async function listBooks(root: string = getStorageDir()): Promise<BookSummary[]> {
-  let entries: string[];
-  try {
-    entries = await readdir(/*turbopackIgnore: true*/ root);
-  } catch {
-    return [];
-  }
-  const books: BookSummary[] = [];
-  for (const id of entries) {
-    if (!isSafeSegment(id)) continue;
-    try {
-      const raw = await readFile(
-        /*turbopackIgnore: true*/ path.join(root, id, "manifest.json"),
-        "utf8",
-      );
-      const manifest = JSON.parse(raw) as FlipbookManifest;
-      books.push({
-        id,
-        title: manifest.title,
-        pageCount: manifest.pageCount,
-        createdAt: manifest.createdAt,
-      });
-    } catch {
-      // Not a finished book (e.g. a `.tmp` folder being written): ignore.
-    }
-  }
-  return books.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
