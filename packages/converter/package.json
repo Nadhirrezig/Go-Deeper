@@ -1,0 +1,23 @@
+{
+  "name": "@vipgroup/converter",
+  "version": "0.0.0",
+  "private": true,
+  "description": "PDF to flipbook converter (library + CLI).",
+  "type": "module",
+  "exports": {
+    ".": {
+      "@vipgroup/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  }
+}
