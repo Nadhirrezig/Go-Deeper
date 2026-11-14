@@ -1,7 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["node"]
+    "types": ["node"],
+    // Typecheck @vipgroup/shared from source, so `pnpm typecheck` works before `pnpm build`.
+    "customConditions": ["@vipgroup/source"]
   },
-  "include": ["src", "tsup.config.ts"]
+  "include": ["src", "test", "tsup.config.ts", "vitest.config.ts"]
 }
