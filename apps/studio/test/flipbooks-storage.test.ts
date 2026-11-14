@@ -54,7 +54,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   delete process.env.FLIPBOOKS_DIR;
-  await rm(work, { recursive: true, force: true });
+  await rm(work, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 });
 
 /** Call the route handler the way Next.js does (params already URL-decoded once). */
@@ -134,10 +134,13 @@ describe("GET /files/[...path]", () => {
 
     const pdf = await get(["book-a", "original.pdf"]);
     expect(pdf.headers.get("content-type")).toBe("application/pdf");
+    // Read every body: an unread stream keeps the file open, and Windows cannot delete it.
+    expect(Buffer.from(await pdf.arrayBuffer()).toString()).toBe("%PDF-1.4 fake");
   });
 
   it("answers 304 when the browser copy is still current", async () => {
     const first = await get(["book-a", "manifest.json"]);
+    await first.body?.cancel();
     const lastModified = first.headers.get("last-modified");
     expect(lastModified).toBeTruthy();
     const second = await get(["book-a", "manifest.json"], {

@@ -8,6 +8,10 @@ import { ConverterError, convertPdf } from "../src/index";
 import type { ConvertOptions, SearchEntry } from "../src/index";
 import { makePdf } from "./fixtures";
 
+// sharp keeps the files it has read open in its cache; Windows cannot delete open files,
+// so the temp folder cleanup would fail with EBUSY. Tests only read a few small images.
+sharp.cache(false);
+
 // Small sizes keep the suite fast; the pipeline is the same as with the defaults.
 const sizes = { thumb: 100, standard: 300, zoom: 600 };
 
@@ -20,7 +24,8 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await rm(work, { recursive: true, force: true });
+  // Retries cover handles Windows (antivirus, indexer) releases a moment late.
+  await rm(work, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 });
 
 const readJson = async <T>(file: string): Promise<T> =>
