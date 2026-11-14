@@ -22,7 +22,11 @@ export type ArtRecipe = {
 export type FolderArt = ArtPreset | ArtRecipe | "none";
 
 export type FolderFile = {
-  /** Stable identity. Give one when the list changes over time, so sheets are kept and only new files drop in. */
+  /**
+   * Stable identity. Give one whenever the list changes over time: sheets are matched by
+   * `id`, so existing sheets stay put and only files new to the list play the drop.
+   * Without it, a file is matched by its position and name.
+   */
   id?: string;
   name: string;
   /** A short second line: a size, a date, a kind. */

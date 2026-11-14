@@ -88,7 +88,8 @@ export default function GlassFolder({
   // ids survive re-renders so a newly added file is the only one that animates in
   const [list, setList] = React.useState<Tracked>(() => track(null, filesProp ?? SAMPLE_FILES));
   const files = list.files;
-  const [dropped, setDropped] = React.useState<number | null>(null);
+  // Sheets playing the drop animation: every file new to the list, not only the last one.
+  const [dropping, setDropping] = React.useState<ReadonlySet<number>>(() => new Set());
   const [bump, setBump] = React.useState(0);
 
   // Follow `files` when its content changes (not merely its reference), using
@@ -102,7 +103,7 @@ export default function GlassFolder({
     const fresh = nextList.ids.filter((id) => !before.has(id));
     setList(nextList);
     if (fresh.length) {
-      setDropped(fresh[fresh.length - 1]!);
+      setDropping((current) => new Set([...current, ...fresh]));
       setBump((b) => b + 1);
     }
   }
@@ -138,7 +139,8 @@ export default function GlassFolder({
     const next = [...files, file];
     const nextList = track(list, next);
     setList(nextList);
-    setDropped(nextList.ids[nextList.ids.length - 1]!);
+    const added = nextList.ids[nextList.ids.length - 1]!;
+    setDropping((current) => new Set([...current, added]));
     setBump((b) => b + 1);
     onFilesChange?.(next);
   };
@@ -262,9 +264,15 @@ export default function GlassFolder({
                   id={id}
                   position={v}
                   visibleCount={visible.length}
-                  dropping={id === dropped}
+                  dropping={dropping.has(id)}
                   density={density}
-                  onDropEnd={() => setDropped(null)}
+                  onDropEnd={() =>
+                    setDropping((current) => {
+                      const next = new Set(current);
+                      next.delete(id);
+                      return next;
+                    })
+                  }
                   onSelect={() => onFileSelect?.(file, start + v)}
                 />
               );
