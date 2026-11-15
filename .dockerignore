@@ -1,0 +1,13 @@
+# Kept out of the image: installed and built inside it, or local only.
+.git
+**/node_modules
+**/dist
+**/.next
+coverage
+release
+storage
+*.log
+# Secrets reach the container at run time (env_file in docker-compose.yml), never the image.
+.env
+.env.*
+!.env.example
