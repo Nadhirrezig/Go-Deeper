@@ -205,8 +205,9 @@ All paths in the manifest are relative to the manifest's own URL. The reader res
   - `ca` (one-shot, `https/Dockerfile` + `make-ca.sh`, alpine + openssl): on the first start,
     creates a root and an intermediate (EC P-256, 10 years), both name-constrained to
     `DNS:$STUDIO_HOST`, then deletes the root key. Every start rewrites the download page in
-    `/ca/public` (`vipgroup-studio-ca.cer`, `installer-certificat.cmd` = `certutil -user -addstore
-    Root`, no admin, `index.html` in French with the fingerprint). Volume `ca`.
+    `/ca/public` (`vipgroup-studio-ca.cer`, `installer-certificat.cmd` elevates to install the CA
+    machine-wide and maps the studio hostname in the Windows hosts file, `index.html` in French
+    with the fingerprint). Volume `ca`.
   - `https` (`caddy:2-alpine`, `https/Caddyfile`): ports 80/443; Caddy's internal PKI signs
     12-hour site certificates with our intermediate and renews them; `http://` → 308 to
     `https://$STUDIO_HOST` except `/certificat` (served over HTTP so a PC without the certificate

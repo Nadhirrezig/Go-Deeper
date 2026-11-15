@@ -48,28 +48,56 @@ FINGERPRINT="$(openssl x509 -in root.crt -noout -fingerprint -sha256 | cut -d= -
 THUMBPRINT="$(openssl x509 -in root.crt -noout -fingerprint -sha1 | cut -d= -f2 | tr -d : | sed 's/.\{8\}/& /g; s/ $//')"
 EXPIRES="$(openssl x509 -in root.crt -noout -enddate | cut -d= -f2)"
 
-# Windows installer: writes the certificate to a temporary file and adds it to the user's trusted
-# roots (no administrator rights; Windows asks for one confirmation). CRLF line endings for cmd.
+# Windows installer: installs the certificate machine-wide and maps the studio hostname in hosts.
+# CRLF line endings for cmd.
 {
   printf '%s\r\n' \
     '@echo off' \
-    "echo Installation du certificat du studio VipGroup ($HOST)" \
+    'setlocal' \
+    'REM === A MODIFIER : IP fixe du serveur ===' \
+    'set "SERVER_IP=192.168.1.10"' \
+    "set \"DOMAIN=$HOST\"" \
+    'set "HOSTS=%SystemRoot%\System32\drivers\etc\hosts"' \
+    '' \
+    'REM --- Relance en administrateur si necessaire ---' \
+    'fltmc >nul 2>&1 || (' \
+    '  echo Demande des droits administrateur...' \
+    "  powershell -NoProfile -Command \"Start-Process -FilePath '%~f0' -Verb RunAs\"" \
+    '  exit /b' \
+    ')' \
+    '' \
+    'echo Installation du certificat du studio VipGroup (%DOMAIN%)' \
     'set "CERT=%TEMP%\vipgroup-studio-ca.cer"' \
     '('
   while IFS= read -r line; do printf 'echo %s\r\n' "$line"; done < root.crt
   printf '%s\r\n' \
     ') > "%CERT%"' \
-    'certutil -user -addstore Root "%CERT%"' \
+    'certutil -addstore -f Root "%CERT%" >nul' \
     'if errorlevel 1 (' \
     '  echo.' \
-    '  echo Le certificat n a pas ete installe. Relancez ce fichier et repondez Oui.' \
+    '  echo Le certificat n a pas ete installe.' \
     '  del "%CERT%"' \
     '  pause' \
     '  exit /b 1' \
     ')' \
     'del "%CERT%"' \
+    'echo Certificat installe.' \
+    '' \
+    'REM --- Fichier hosts : sauvegarde, retire l ancienne ligne, ajoute la nouvelle ---' \
+    'if not exist "%HOSTS%.vipgroup.bak" copy /y "%HOSTS%" "%HOSTS%.vipgroup.bak" >nul' \
+    'attrib -r "%HOSTS%"' \
+    "powershell -NoProfile -Command \"\$ErrorActionPreference='Stop'; try { \$h='%HOSTS%'; \$domain='%DOMAIN%'; \$c=@(Get-Content \$h | Where-Object { \$_ -notmatch ('\\s' + [regex]::Escape(\$domain) + '(\\s|\$)') }); \$c += '%SERVER_IP% %DOMAIN%'; Set-Content -Path \$h -Value \$c -Encoding ASCII; exit 0 } catch { exit 1 }\"" \
+    'if errorlevel 1 (' \
+    '  echo.' \
+    '  echo Le fichier hosts n a pas pu etre modifie.' \
+    '  pause' \
+    '  exit /b 1' \
+    ')' \
+    'ipconfig /flushdns >nul' \
+    'echo Domaine configure : %DOMAIN% -^> %SERVER_IP%' \
+    '' \
     'echo.' \
-    "echo Certificat installe. Fermez puis rouvrez le navigateur, puis ouvrez https://$HOST" \
+    'echo Termine. Fermez puis rouvrez le navigateur, puis ouvrez https://%DOMAIN%' \
     'pause'
 } > public/installer-certificat.cmd
 
