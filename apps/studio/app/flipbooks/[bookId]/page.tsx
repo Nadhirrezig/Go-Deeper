@@ -4,9 +4,11 @@ import { Flipbook } from "@vipgroup/flipbook";
 import "@vipgroup/flipbook/styles.css";
 import { DeleteBookButton } from "../../../components/books/book-page-actions";
 import { BookProgress } from "../../../components/books/book-progress";
+import { PublishPanel } from "../../../components/books/publish-panel";
 import { Breadcrumb } from "../../../components/ui/breadcrumb";
 import { buttonClass } from "../../../components/ui/button";
 import { bookFileUrl, formatBytes, formatDate, pageCountLabel } from "../../../lib/format";
+import { goexperienceUrl } from "../../../lib/publish/site";
 import { getLibrary } from "../../../lib/services";
 
 export const dynamic = "force-dynamic";
@@ -57,6 +59,8 @@ export default async function BookPage({ params }: { params: Promise<{ bookId: s
           Échec de la conversion : {book.error?.message ?? "erreur inconnue"}
         </p>
       )}
+
+      <PublishPanel book={book} siteUrl={goexperienceUrl()} />
 
       <section className="glass flex flex-col gap-5 rounded-3xl p-6 sm:flex-row sm:items-start sm:justify-between">
         <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">

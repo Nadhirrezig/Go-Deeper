@@ -40,9 +40,16 @@ export function BookCard({
         )}
       </Link>
       <div className="flex flex-col gap-1.5 p-4">
-        <h3 className="truncate font-medium" title={book.title}>
-          {book.title}
-        </h3>
+        <div className="flex items-center gap-2">
+          <h3 className="truncate font-medium" title={book.title}>
+            {book.title}
+          </h3>
+          {book.publishedAt && (
+            <span className="shrink-0 rounded-full bg-emerald-600/10 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
+              En ligne
+            </span>
+          )}
+        </div>
         {book.status === "ready" && (
           <p className="font-mono text-xs text-muted-foreground">
             {pageCountLabel(book.pageCount)} · {formatDate(book.createdAt)}
