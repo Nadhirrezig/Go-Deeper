@@ -184,6 +184,17 @@ All paths in the manifest are relative to the manifest's own URL. The reader res
   waits for. `PostgresLibraryRepository` implements `LibraryRepository`; a one-time import reads the
   existing `library.json`. No PostgreSQL install on Windows is needed. The driver is a new
   dependency: ask before adding it. Every new variable goes to `.env.example`.
+- Done in S8b (decisions: `pg`, `postgres:16-alpine`): `lib/library/postgres-repository.ts` (same
+  rules and messages as the JSON one; each change is a transaction holding one advisory lock;
+  folders + books tables, the full BookRecord in `books.record` jsonb), `postgres-schema.ts`
+  (numbered migrations, run at start-up), one-time `importJsonLibrary` (only into an empty
+  database; renames the file `library.json.imported`). `lib/services.ts` picks PostgreSQL when
+  `PGHOST` or `DATABASE_URL` is set (Compose sets `PG*` from `POSTGRES_PASSWORD`), else
+  `library.json` (plain `pnpm dev`). Tests: `test/library-contract.ts` runs the same suite on both
+  repositories; PostgreSQL tests need `TEST_DATABASE_URL` (skipped otherwise). Vitest's
+  `ssr.resolve.conditions` no longer lists "import"/"module": vitest passes them to Node as
+  `--conditions`, which broke `require` inside `pg`. Tested in Docker: import, conversion, Publier,
+  restarts, `pg_dump` backup and restore.
 - Write down backups (volume copy, `pg_dump`) and the update routine (`git pull` +
   `docker compose up -d --build`) in the README.
 
@@ -215,7 +226,7 @@ All paths in the manifest are relative to the manifest's own URL. The reader res
 ## Stack and approved dependencies
 
 - Node.js 22 LTS, pnpm 9+, TypeScript `strict`
-- **studio**: Next.js (latest stable, App Router), Tailwind CSS v4, React 19
+- **studio**: Next.js (latest stable, App Router), Tailwind CSS v4, React 19, `pg` (PostgreSQL, from S8b)
 - **converter**: `pdfjs-dist` (render + text), `@napi-rs/canvas` (Node canvas for pdfjs), `sharp` (WebP), `commander` (CLI)
 - **flipbook**: `page-flip` (StPageFlip, MIT). Built with `tsup`. Styles in one plain CSS file, every class prefixed `vgf-`, theming through CSS variables (`--vgf-*`). Do NOT use turn.js (paid licence).
 - Testing: `vitest`

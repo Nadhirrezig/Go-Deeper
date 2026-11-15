@@ -44,6 +44,15 @@ pnpm build
 
 Run one package only: `pnpm --filter @vipgroup/flipbook test` (or `build`, `lint`, …).
 
+The studio's PostgreSQL tests are skipped unless `TEST_DATABASE_URL` points at a server. With a
+throwaway one in Docker (each a single command):
+
+```bash
+docker run -d --name vgf-test-db -e POSTGRES_PASSWORD=test -p 127.0.0.1:5433:5432 postgres:16-alpine
+$env:TEST_DATABASE_URL="postgres://postgres:test@127.0.0.1:5433/postgres"; pnpm --filter @vipgroup/studio test
+docker rm -f vgf-test-db
+```
+
 ## Convert a PDF (CLI)
 
 ```bash
@@ -71,9 +80,13 @@ in a child process with `@vipgroup/converter/worker` (built by `pnpm build`).
 
 ## Run the studio with Docker (office PC)
 
-On the office PC the studio runs with Docker Compose, which replaces pm2. It needs Docker Desktop
-(WSL 2 backend) with **Settings → General → Start Docker Desktop when you sign in** ticked, so the
-studio comes back by itself after a reboot.
+On the office PC the studio runs with Docker Compose, which replaces pm2: a `studio` container and
+a `postgres` container (PostgreSQL 16) holding the library. It needs Docker Desktop (WSL 2 backend)
+with **Settings → General → Start Docker Desktop when you sign in** ticked, so both come back by
+themselves after a reboot.
+
+Once, before the first start: in the repo's `.env`, set `POSTGRES_PASSWORD` (letters and digits).
+It is fixed when the database is created; changing it later does not change it there.
 
 From the repo root, in PowerShell:
 
@@ -85,25 +98,40 @@ docker compose up -d --build
   the office network. If Windows asks, allow Docker Desktop on private networks.
 - Port 3000 must be free: stop any studio started before with pm2 (`pm2 list`, then
   `pm2 delete <name>`) or with `pnpm start`.
-- Settings come from the repo's `.env` (R2 keys, `GOEXPERIENCE_URL`), read when the container
-  starts: after changing it, run `docker compose up -d` again. `STORAGE_DIR` and `FLIPBOOKS_DIR`
-  are ignored in Docker.
-- The data (library, converted books, uploads) lives in the Docker volume `vipgroup_studio-data`,
-  mounted at `/data`. It survives restarts, rebuilds and `docker compose down`;
-  `docker compose down -v` **deletes it**.
+- Settings come from the repo's `.env` (R2 keys, `GOEXPERIENCE_URL`, `POSTGRES_PASSWORD`), read
+  when the containers start: after changing it, run `docker compose up -d` again. `STORAGE_DIR`,
+  `FLIPBOOKS_DIR` and `PG*` from `.env` are ignored in Docker.
+- The library (folders, books, publication state) is in PostgreSQL, volume
+  `vipgroup_postgres-data`; the database is not reachable from the network, only by the studio.
+  The converted books and uploads are in the volume `vipgroup_studio-data`, mounted at `/data`.
+  Both survive restarts, rebuilds and `docker compose down`; `docker compose down -v` **deletes
+  them**.
+- The first start with PostgreSQL moves an existing `library.json` (from the studio's earlier
+  Docker setup) into the database, once, and renames it `library.json.imported`. The log says
+  `imported library.json (…)`.
 
-| Task                       | Command                                                        |
-| -------------------------- | -------------------------------------------------------------- |
-| State (should say healthy) | `docker compose ps`                                            |
-| Logs                       | `docker compose logs -f studio`                                |
-| Update after `git pull`    | `docker compose up -d --build`                                 |
-| Stop / start again         | `docker compose stop` / `docker compose start`                 |
-| Back up the data           | `docker compose cp studio:/data C:\VipGroupBackups\2026-11-15` |
+| Task                    | Command                                        |
+| ----------------------- | ---------------------------------------------- |
+| State (both healthy)    | `docker compose ps`                            |
+| Logs                    | `docker compose logs -f studio`                |
+| Update after `git pull` | `docker compose up -d --build`                 |
+| Stop / start again      | `docker compose stop` / `docker compose start` |
 
-Restore a backup (replaces the current data), one command after the other:
+**Back up** (database and books; preferably when nobody is converting or publishing), one command
+after the other, into a folder of your choice:
 
 ```bash
-docker compose cp C:\VipGroupBackups\2026-11-15\. studio:/data
+docker compose exec postgres pg_dump -U vipgroup -d vipgroup --clean --if-exists -f /tmp/library.sql
+docker compose cp postgres:/tmp/library.sql C:\VipGroupBackups\2026-11-15\library.sql
+docker compose cp studio:/data C:\VipGroupBackups\2026-11-15\data
+```
+
+**Restore** a backup (replaces the current library and books):
+
+```bash
+docker compose cp C:\VipGroupBackups\2026-11-15\library.sql postgres:/tmp/library.sql
+docker compose exec postgres psql -U vipgroup -d vipgroup -f /tmp/library.sql
+docker compose cp C:\VipGroupBackups\2026-11-15\data\. studio:/data
 docker compose exec -u root studio chown -R node:node /data
 docker compose restart studio
 ```
@@ -137,17 +165,20 @@ On the office PC it runs with Docker (above). For development, start it with `pn
 Books converted with `pnpm convert` appear in "Général" the next time the studio starts. A
 conversion cut short by stopping the studio is shown as "Conversion interrompue".
 
-Storage (all under `storage/`, never committed): `library.json` (folders and books, until
-PostgreSQL in step 6), `flipbooks/<id>/` (converted books, served by `/files/<id>/…`) and
-`uploads/` (PDFs waiting for conversion, emptied as they finish).
+Storage (all under `storage/`, never committed): `library.json` (folders and books, when no
+PostgreSQL is configured: with Docker the library is in PostgreSQL), `flipbooks/<id>/` (converted
+books, served by `/files/<id>/…`) and `uploads/` (PDFs waiting for conversion, emptied as they
+finish).
 
-| Variable                                                    | Default                       | Meaning                                                   |
-| ----------------------------------------------------------- | ----------------------------- | --------------------------------------------------------- |
-| `STORAGE_DIR`                                               | `<repo>/storage`              | Folder for library.json, books and uploads                |
-| `FLIPBOOKS_DIR`                                             | `<storage>/flipbooks`         | Only the converted books, elsewhere                       |
-| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | none                          | Cloudflare R2 token the studio publishes with (see below) |
-| `R2_BUCKET`                                                 | `goexperience`                | R2 bucket goexperience.travel reads                       |
-| `GOEXPERIENCE_URL`                                          | `https://goexperience.travel` | Site address for "Voir sur le site" and share links       |
+| Variable                                                         | Default                       | Meaning                                                   |
+| ---------------------------------------------------------------- | ----------------------------- | --------------------------------------------------------- |
+| `STORAGE_DIR`                                                    | `<repo>/storage`              | Folder for library.json, books and uploads                |
+| `FLIPBOOKS_DIR`                                                  | `<storage>/flipbooks`         | Only the converted books, elsewhere                       |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`      | none                          | Cloudflare R2 token the studio publishes with (see below) |
+| `R2_BUCKET`                                                      | `goexperience`                | R2 bucket goexperience.travel reads                       |
+| `GOEXPERIENCE_URL`                                               | `https://goexperience.travel` | Site address for "Voir sur le site" and share links       |
+| `POSTGRES_PASSWORD`                                              | none (required by Docker)     | Password of the studio's PostgreSQL database              |
+| `PGHOST`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` or `DATABASE_URL` | none                          | Outside Docker: use PostgreSQL instead of library.json    |
 
 Set them in `.env` (see `.env.example`).
 
