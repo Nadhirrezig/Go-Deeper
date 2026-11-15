@@ -34,4 +34,10 @@ export interface BookRecord {
   /** Size of the book folder on disk (images, PDF, JSON). */
   sizeBytes?: number;
   createdAt: string; // ISO
+  /** When the book was put on goexperience.travel (ISO); absent while it is not published. */
+  publishedAt?: string;
+  /** A publish or unpublish under way: files sent to (or removed from) R2 so far. */
+  publication?: { action: "publish" | "unpublish"; done: number; total: number };
+  /** Why the last publish or unpublish failed: code and a French message for the team. */
+  publicationError?: { code: string; message: string };
 }
