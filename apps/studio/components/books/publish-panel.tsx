@@ -6,19 +6,19 @@ import type { BookRecord } from "@vipgroup/shared";
 import { publishBookAction, unpublishBookAction } from "../../app/flipbooks/actions";
 import type { ActionResult } from "../../app/flipbooks/actions";
 import { formatDate } from "../../lib/format";
-import { publicBookUrls } from "../../lib/publish/site";
+import type { PublicSite } from "../../lib/publish/sites";
 import { buttonClass } from "../ui/button";
 import { Modal } from "../ui/modal";
 import { useLiveBooks } from "../use-live-books";
 
-type Action = (id: string) => Promise<ActionResult<BookRecord>>;
+type Action = () => Promise<ActionResult<BookRecord>>;
 
 /**
- * The flipbook page's "Site goexperience.travel" card: publish the book, follow the upload,
- * see where it is online, unpublish it. Progress comes from the book record, polled while an
- * operation runs (useLiveBooks).
+ * The flipbook page's card for one site: publish the book there, follow the upload, see where
+ * it is online, unpublish it. Progress comes from the book record, polled while an operation
+ * runs (useLiveBooks).
  */
-export function PublishPanel({ book, siteUrl }: { book: BookRecord; siteUrl: string }) {
+export function PublishPanel({ book, site }: { book: BookRecord; site: PublicSite }) {
   const router = useRouter();
   const [live = book] = useLiveBooks([book]);
   const [pending, startTransition] = useTransition();
@@ -28,14 +28,16 @@ export function PublishPanel({ book, siteUrl }: { book: BookRecord; siteUrl: str
   const run = (action: Action) =>
     startTransition(async () => {
       setActionError(null);
-      const result = await action(live.id);
+      const result = await action();
       if (!result.ok) setActionError(result.error.message);
       router.refresh();
     });
 
-  const { publication, publishedAt } = live;
-  const urls = publicBookUrls(siteUrl, live.id);
-  const error = actionError ?? live.publicationError?.message;
+  // Another site's operation shows on that site's card.
+  const publication = live.publication?.site === site.id ? live.publication : undefined;
+  const publishedAt = live.sites?.[site.id]?.publishedAt;
+  const ownError = live.publicationError?.site === site.id ? live.publicationError : undefined;
+  const error = actionError ?? ownError?.message;
   const percent = publication?.total ? (publication.done / publication.total) * 100 : 0;
 
   const status = publication
@@ -56,7 +58,7 @@ export function PublishPanel({ book, siteUrl }: { book: BookRecord; siteUrl: str
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h2 id="publish-heading" className="text-lg font-semibold">
-            Site goexperience.travel
+            Site {site.host}
           </h2>
           <p className="text-sm text-muted-foreground" aria-live="polite">
             {status}
@@ -67,7 +69,7 @@ export function PublishPanel({ book, siteUrl }: { book: BookRecord; siteUrl: str
             {publishedAt ? (
               <>
                 <a
-                  href={urls.page}
+                  href={site.page}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={buttonClass.secondary}
@@ -87,8 +89,8 @@ export function PublishPanel({ book, siteUrl }: { book: BookRecord; siteUrl: str
               <button
                 type="button"
                 className={buttonClass.primary}
-                disabled={pending || live.status !== "ready"}
-                onClick={() => run(publishBookAction)}
+                disabled={pending || live.status !== "ready" || live.publication !== undefined}
+                onClick={() => run(() => publishBookAction(live.id, [site.id]))}
               >
                 Publier sur le site
               </button>
@@ -127,7 +129,7 @@ export function PublishPanel({ book, siteUrl }: { book: BookRecord; siteUrl: str
       {publishedAt && !publication && (
         <p className="text-sm">
           Lien à partager :{" "}
-          <code className="font-mono text-[13px] break-all select-all">{urls.share}</code>
+          <code className="font-mono text-[13px] break-all select-all">{site.share}</code>
         </p>
       )}
 
@@ -156,7 +158,7 @@ export function PublishPanel({ book, siteUrl }: { book: BookRecord; siteUrl: str
             disabled={pending}
             onClick={() => {
               setConfirming(false);
-              run(unpublishBookAction);
+              run(() => unpublishBookAction(live.id, site.id));
             }}
           >
             Dépublier

@@ -95,8 +95,10 @@ describe.skipIf(!url)("PostgreSQL only", () => {
       folderId: "f2",
       slug: "brochure-ete",
       pageCount: 10,
-      publishedAt: "2026-02-02T00:00:00.000Z",
+      // Before step 7, publishedAt meant goexperience.travel.
+      sites: { goexperience: { publishedAt: "2026-02-02T00:00:00.000Z" } },
     });
+    expect(await repo.getBook("b1")).not.toHaveProperty("publishedAt");
     // The artwork order goes on where library.json left it.
     expect((await repo.createFolder("Nouveau")).art).toBe("glacier");
     expect(await readdir(work)).toEqual(["library.json.imported"]);
@@ -110,6 +112,38 @@ describe.skipIf(!url)("PostgreSQL only", () => {
     await writeFile(file, JSON.stringify({ version: 1, folders: [], books: [], nextArt: 0 }));
     expect(await repo.importJsonLibrary(file)).toBeNull();
     expect(await readdir(work)).toEqual(["library.json"]);
+  });
+
+  it("reads a record stored before step 7 as published on GO Experience", async () => {
+    const repo = new PostgresLibraryRepository(pool);
+    const [general] = await repo.listFolders();
+    const legacy = {
+      ...book("old", general!.id, "ancien"),
+      publishedAt: "2026-11-01T09:00:00.000Z",
+      publication: { action: "unpublish", done: 1, total: 9 },
+    };
+    await pool.query("INSERT INTO books (id, folder_id, slug, record) VALUES ($1, $2, $3, $4)", [
+      "old",
+      general!.id,
+      "ancien",
+      JSON.stringify(legacy),
+    ]);
+    const upgraded = await repo.getBook("old");
+    expect(upgraded).toMatchObject({
+      sites: { goexperience: { publishedAt: "2026-11-01T09:00:00.000Z" } },
+      publication: { action: "unpublish", site: "goexperience" },
+    });
+    expect(upgraded).not.toHaveProperty("publishedAt");
+    expect(await repo.listBooks()).toEqual([upgraded]);
+    // Its next change stores the new shape.
+    await repo.updateBook("old", { publication: undefined });
+    const { rows } = await pool.query<{ record: Record<string, unknown> }>(
+      "SELECT record FROM books WHERE id = 'old'",
+    );
+    expect(rows[0]!.record).not.toHaveProperty("publishedAt");
+    expect(rows[0]!.record.sites).toEqual({
+      goexperience: { publishedAt: "2026-11-01T09:00:00.000Z" },
+    });
   });
 
   it("rolls a refused change back completely", async () => {

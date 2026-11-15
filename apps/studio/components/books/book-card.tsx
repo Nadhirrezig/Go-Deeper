@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { publishedSites } from "@vipgroup/shared";
 import type { BookRecord } from "@vipgroup/shared";
 import { coverUrl, formatDate, pageCountLabel } from "../../lib/format";
 
@@ -44,7 +45,7 @@ export function BookCard({
           <h3 className="truncate font-medium" title={book.title}>
             {book.title}
           </h3>
-          {book.publishedAt && (
+          {publishedSites(book).length > 0 && (
             <span className="shrink-0 rounded-full bg-emerald-600/10 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
               En ligne
             </span>

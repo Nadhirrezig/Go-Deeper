@@ -4,7 +4,13 @@ import { ART_PRESET_ORDER } from "@vipgroup/shared";
 import type { BookRecord, Folder } from "@vipgroup/shared";
 import { readFileIfExists, SerialQueue, writeFileAtomic } from "./atomic-file";
 import { LibraryError } from "./errors";
-import { checkFolderName, checkSlug, DEFAULT_FOLDER_NAME, newestFirst } from "./repository";
+import {
+  checkFolderName,
+  checkSlug,
+  DEFAULT_FOLDER_NAME,
+  newestFirst,
+  upgradeBookRecord,
+} from "./repository";
 import type { BookPatch, LibraryRepository, NewBook } from "./repository";
 
 /** Content of `library.json`. */
@@ -187,7 +193,7 @@ export class JsonLibraryRepository implements LibraryRepository {
     return {
       version: 1,
       folders: data.folders ?? [],
-      books: data.books ?? [],
+      books: (data.books ?? []).map(upgradeBookRecord),
       nextArt: data.nextArt ?? data.folders?.length ?? 0,
     };
   }

@@ -12,7 +12,7 @@ import { getFlipbooksDir, getLibraryFile, getUploadsDir } from "./storage";
 export interface Services {
   repo: LibraryRepository;
   queue: ConversionQueue;
-  /** Publier / Dépublier on goexperience.travel (one operation at a time). */
+  /** Publier / Dépublier on the sites (one operation at a time). */
   publisher: Publisher;
   flipbooksDir: string;
   uploadsDir: string;

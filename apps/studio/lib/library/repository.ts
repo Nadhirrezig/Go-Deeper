@@ -90,3 +90,25 @@ export function checkSlug(
     );
   }
 }
+
+/**
+ * A book record as stored, brought to the current shape. Before step 7 a book could only be on
+ * goexperience.travel: its `publishedAt` (and a `publication` or `publicationError` without a
+ * site) mean GO Experience. Both repositories pass every record they read through this, so old
+ * records need no migration and are rewritten in the new shape on their next change.
+ */
+export function upgradeBookRecord(stored: BookRecord): BookRecord {
+  const { publishedAt, ...book } = stored as BookRecord & { publishedAt?: string };
+  const { publication, publicationError } = book;
+  const legacyPublication = publication !== undefined && !publication.site;
+  const legacyError = publicationError !== undefined && !publicationError.site;
+  if (publishedAt === undefined && !legacyPublication && !legacyError) return stored;
+
+  const upgraded: BookRecord = { ...book };
+  if (publishedAt !== undefined) {
+    upgraded.sites = { goexperience: { publishedAt }, ...book.sites };
+  }
+  if (legacyPublication) upgraded.publication = { ...publication, site: "goexperience" };
+  if (legacyError) upgraded.publicationError = { ...publicationError, site: "goexperience" };
+  return upgraded;
+}

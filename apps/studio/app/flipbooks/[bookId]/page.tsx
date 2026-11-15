@@ -8,7 +8,7 @@ import { PublishPanel } from "../../../components/books/publish-panel";
 import { Breadcrumb } from "../../../components/ui/breadcrumb";
 import { buttonClass } from "../../../components/ui/button";
 import { bookFileUrl, formatBytes, formatDate, pageCountLabel } from "../../../lib/format";
-import { goexperienceUrl } from "../../../lib/publish/site";
+import { publicSites } from "../../../lib/publish/sites";
 import { getLibrary } from "../../../lib/services";
 
 export const dynamic = "force-dynamic";
@@ -60,7 +60,8 @@ export default async function BookPage({ params }: { params: Promise<{ bookId: s
         </p>
       )}
 
-      <PublishPanel book={book} siteUrl={goexperienceUrl()} />
+      {/* Until the site choice (step 7, V6): GO Experience only, as before. */}
+      <PublishPanel book={book} site={publicSites(book.id)[0]!} />
 
       <section className="glass flex flex-col gap-5 rounded-3xl p-6 sm:flex-row sm:items-start sm:justify-between">
         <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
