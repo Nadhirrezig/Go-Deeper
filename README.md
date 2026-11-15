@@ -94,12 +94,19 @@ Storage (all under `storage/`, never committed): `library.json` (folders and boo
 PostgreSQL in step 6), `flipbooks/<id>/` (converted books, served by `/files/<id>/…`) and
 `uploads/` (PDFs waiting for conversion, emptied as they finish).
 
-| Variable        | Default               | Meaning                                    |
-| --------------- | --------------------- | ------------------------------------------ |
-| `STORAGE_DIR`   | `<repo>/storage`      | Folder for library.json, books and uploads |
-| `FLIPBOOKS_DIR` | `<storage>/flipbooks` | Only the converted books, elsewhere        |
+| Variable                                                    | Default               | Meaning                                                   |
+| ----------------------------------------------------------- | --------------------- | --------------------------------------------------------- |
+| `STORAGE_DIR`                                               | `<repo>/storage`      | Folder for library.json, books and uploads                |
+| `FLIPBOOKS_DIR`                                             | `<storage>/flipbooks` | Only the converted books, elsewhere                       |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | none                  | Cloudflare R2 token the studio publishes with (see below) |
+| `R2_BUCKET`                                                 | `goexperience`        | R2 bucket goexperience.travel reads                       |
 
 Set them in `.env` (see `.env.example`).
+
+**Cloudflare R2.** Published books go to `flipbooks/<id>/` in the private R2 bucket that
+goexperience.travel reads (setup: the "Cloudflare R2 setup guide" doc). The studio signs its
+requests itself (`apps/studio/lib/r2/`, no SDK) with its own token: "Object Read & Write" on the
+`goexperience` bucket only. The **Publier / Dépublier** buttons that use it come in S7.
 
 Tip: keep the repo (and so `storage/`) outside OneDrive or other synced folders — every book
 adds hundreds of image files, which slows conversion and can lock files during sync.

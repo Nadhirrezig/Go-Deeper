@@ -147,6 +147,11 @@ All paths in the manifest are relative to the manifest's own URL. The reader res
   that approach for PUT / DELETE if possible; ask before adding an S3 SDK.
 - The Cloudflare connector ("Developer Platform") can list and inspect buckets, but cannot upload
   files, create tokens or change bucket settings.
+- Done in S6: `apps/studio/lib/r2/` — `sign.ts` (SigV4 presigned URLs, checked against AWS's example
+  and goexperience's signer), `client.ts` (`r2ConfigFromEnv`, PUT / DELETE / LIST with retries,
+  `R2Error` with French messages), `book-sync.ts` (`uploadBookFolder`: files from the manifest,
+  manifest last, then checked by listing; `deleteBookFolder`: book ids only, manifest first). Tested
+  with a fake R2 only: real R2 is first used by S7's buttons. S7 adds a GET for `index.json`.
 - S8 (PostgreSQL) runs on the office PC only. It needs a PostgreSQL server installed there and a
   driver dependency: ask before adding it.
 
