@@ -1,6 +1,6 @@
 # VipGroup studio on the office PC. From the repo root: `docker compose up -d --build`, then
 # http://localhost:3000 (or http://<pc-ip>:3000 on the office network). README: "Run the studio
-# with Docker".
+# with Docker". Needs POSTGRES_PASSWORD in the repo's .env (see .env.example).
 name: vipgroup
 
 services:
@@ -19,9 +19,18 @@ services:
       # Inside the container: these win over any Windows path set in .env.
       STORAGE_DIR: /data
       FLIPBOOKS_DIR: /data/flipbooks
+      # The library (folders, books) is in the postgres service; pg reads these variables.
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: vipgroup
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (see .env.example)}
+      PGDATABASE: vipgroup
     volumes:
-      # The library, the converted books and the uploads. Kept when the container is rebuilt.
+      # The converted books and the uploads. Kept when the container is rebuilt.
       - studio-data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test:
         - CMD
@@ -32,11 +41,31 @@ services:
       timeout: 5s
       start_period: 30s
       retries: 3
-    logging:
+    logging: &logging
       driver: json-file
       options:
         max-size: 10m
         max-file: "3"
 
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    # No `ports`: only the studio reaches the database, on Compose's own network.
+    environment:
+      POSTGRES_USER: vipgroup
+      POSTGRES_DB: vipgroup
+      # Used when the database is first created; changing it later does not change it there.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (see .env.example)}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vipgroup -d vipgroup"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+    logging: *logging
+
 volumes:
   studio-data:
+  postgres-data:
