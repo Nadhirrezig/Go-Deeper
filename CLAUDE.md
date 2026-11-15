@@ -100,6 +100,29 @@ Decisions taken for step 7:
   `flipbooks/` with an image extension, cached as before (`max-age=86400,
   stale-while-revalidate=604800`); flipbook rules and headers are goexperience's. `vitest.config.ts`,
   `pnpm test`. event.vip's `pnpm lint` already failed before V1: ESLint is not installed there.
+- Done in V2: `vendor/vipgroup-flipbook-0.1.0.tgz` (the file goexperience uses);
+  `src/lib/flipbook-index.ts` (parsing, short ids, `/flipbook/<short id>` paths, `/api/r2` file
+  URLs) and `src/lib/flipbooks.ts` (signed GET of `flipbooks/index.json`, `unstable_cache` 60 s,
+  React `cache()` per request), as on goexperience; `hasR2Credentials()` in `src/lib/r2.ts`.
+- Done in V3: `src/app/flipbook/[id]/page.tsx` (`force-dynamic`; full id → 308 to the short id;
+  title "<title> | VIP EVENTS", canonical `https://www.vipdestinations.fr/flipbook/<short id>`;
+  `labelsEn` when the cookie says English) and `src/app/flipbook/page.tsx` (newest first);
+  `src/components/flipbook/` (card, Partager); `src/lib/site.ts` (`SITE_URL`, fixed, no env var);
+  texts in `src/messages/{fr,en}.json` (`flipbook`, `metadata.flipbook(s)`). The root layout's
+  header is solid on these pages and reserves its own height. The site brands itself "VIP EVENTS"
+  and its `openGraph.url` is still `https://vip-events.com` (left as is).
+- Done in V5: `PUBLISH_SITES` / `PublishSite` / `publishedSites()` in `packages/shared`.
+  `BookRecord.sites` (`{ goexperience?: { publishedAt }, vipdestinations?: { publishedAt } }`)
+  replaces `publishedAt`; `publication` and `publicationError` carry their `site`.
+  `upgradeBookRecord` (lib/library/repository.ts) reads an old record (`publishedAt`, no site) as
+  GO Experience; both repositories pass every record through it, so no migration: a record is
+  rewritten in the new shape on its next change. `lib/publish/sites.ts`: name, address, bucket and
+  page path per site (`R2_BUCKET`, `R2_BUCKET_VIPDESTINATIONS`, `GOEXPERIENCE_URL`,
+  `VIPDESTINATIONS_URL`). `Publisher.publish(id, sites)` runs the chosen sites one after the
+  other (PUBLISH_SITES order) in one background operation and stops at the first failure (sites
+  done before stay online); `unpublish(id, site)`; clashes are checked against each site's own
+  `index.json`. Deleting a book is refused while it is online on any site. Until V6 the book page
+  shows the GO Experience card only.
 
 ## Architecture
 
