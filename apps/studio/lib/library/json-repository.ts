@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import path from "node:path";
-import { ART_PRESET_ORDER, isValidSlug, uniqueSlug } from "@vipgroup/shared";
+import { ART_PRESET_ORDER } from "@vipgroup/shared";
 import type { BookRecord, Folder } from "@vipgroup/shared";
 import { readFileIfExists, SerialQueue, writeFileAtomic } from "./atomic-file";
 import { LibraryError } from "./errors";
-import { checkFolderName, DEFAULT_FOLDER_NAME, newestFirst } from "./repository";
+import { checkFolderName, checkSlug, DEFAULT_FOLDER_NAME, newestFirst } from "./repository";
 import type { BookPatch, LibraryRepository, NewBook } from "./repository";
 
 /** Content of `library.json`. */
@@ -207,20 +207,3 @@ export class JsonLibraryRepository implements LibraryRepository {
 }
 
 const notFound = (message: string): LibraryError => new LibraryError("NOT_FOUND", message);
-
-function checkSlug(slug: string, books: readonly BookRecord[], exceptId?: string): void {
-  if (!isValidSlug(slug)) {
-    throw new LibraryError(
-      "SLUG_INVALID",
-      "Le slug ne peut contenir que des lettres minuscules, des chiffres et des tirets.",
-    );
-  }
-  const taken = new Set(books.filter((book) => book.id !== exceptId).map((book) => book.slug));
-  if (taken.has(slug)) {
-    throw new LibraryError(
-      "SLUG_TAKEN",
-      "Ce slug est déjà utilisé par un autre flipbook.",
-      uniqueSlug(slug, taken),
-    );
-  }
-}

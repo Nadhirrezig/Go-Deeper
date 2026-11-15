@@ -1,3 +1,4 @@
+import { isValidSlug, uniqueSlug } from "@vipgroup/shared";
 import type { BookRecord, Folder } from "@vipgroup/shared";
 import { LibraryError } from "./errors";
 
@@ -63,4 +64,29 @@ export function checkFolderName(
 /** Newest first, then by title for books added in the same millisecond. */
 export function newestFirst(a: BookRecord, b: BookRecord): number {
   return b.createdAt.localeCompare(a.createdAt) || a.title.localeCompare(b.title, "fr");
+}
+
+/**
+ * Throws SLUG_INVALID, or SLUG_TAKEN with a free slug to offer instead (`books` are the other
+ * books of the library; `exceptId` is the book being renamed).
+ */
+export function checkSlug(
+  slug: string,
+  books: readonly Pick<BookRecord, "id" | "slug">[],
+  exceptId?: string,
+): void {
+  if (!isValidSlug(slug)) {
+    throw new LibraryError(
+      "SLUG_INVALID",
+      "Le slug ne peut contenir que des lettres minuscules, des chiffres et des tirets.",
+    );
+  }
+  const taken = new Set(books.filter((book) => book.id !== exceptId).map((book) => book.slug));
+  if (taken.has(slug)) {
+    throw new LibraryError(
+      "SLUG_TAKEN",
+      "Ce slug est déjà utilisé par un autre flipbook.",
+      uniqueSlug(slug, taken),
+    );
+  }
 }
