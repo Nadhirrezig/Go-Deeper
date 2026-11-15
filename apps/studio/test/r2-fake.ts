@@ -1,11 +1,11 @@
 /**
  * In-memory stand-in for the R2 S3 API, used as `fetch` by the R2 tests. It serves presigned
- * path-style URLs (/<bucket>/<key>): PUT, DELETE, and ListObjectsV2 (GET /<bucket>?list-type=2).
+ * path-style URLs (/<bucket>/<key>): GET, PUT, DELETE, and ListObjectsV2 (GET /<bucket>?list-type=2).
  * Unsigned requests get 403. `failNext` queues statuses (or "network") for the next requests.
  */
 export interface FakeR2 {
   fetch: typeof fetch;
-  objects: Map<string, { body: Uint8Array; contentType: string }>;
+  objects: Map<string, { body: Uint8Array<ArrayBuffer>; contentType: string }>;
   /** Every request, in order: "PUT flipbooks/…", "DELETE …", "LIST <prefix>". */
   log: string[];
   failNext: (number | "network")[];
@@ -17,7 +17,7 @@ const escapeXml = (text: string): string =>
 export function createFakeR2(options: { bucket?: string; pageSize?: number } = {}): FakeR2 {
   const bucket = options.bucket ?? "goexperience";
   const pageSize = options.pageSize ?? 1000;
-  const objects = new Map<string, { body: Uint8Array; contentType: string }>();
+  const objects = new Map<string, { body: Uint8Array<ArrayBuffer>; contentType: string }>();
   const log: string[] = [];
   const failNext: (number | "network")[] = [];
 
@@ -60,6 +60,15 @@ export function createFakeR2(options: { bucket?: string; pageSize?: number } = {
       objects.set(key, { body, contentType });
       log.push(`PUT ${key}`);
       return new Response(null, { status: 200 });
+    }
+    if (method === "GET" && key) {
+      const object = objects.get(key);
+      log.push(`GET ${key}`);
+      if (!object) return new Response("NoSuchKey", { status: 404 });
+      return new Response(object.body, {
+        status: 200,
+        headers: { "Content-Type": object.contentType },
+      });
     }
     if (method === "DELETE" && key) {
       objects.delete(key);

@@ -5,7 +5,9 @@ export type R2ErrorCode =
   | "NETWORK"
   | "INVALID_BOOK"
   | "MISSING_FILE"
-  | "INCOMPLETE";
+  | "INCOMPLETE"
+  | "INDEX_INVALID"
+  | "INDEX_CONFLICT";
 
 /** French messages for the team (shown by the Publier / Dépublier actions in S7). */
 const MESSAGES: Record<R2ErrorCode, string> = {
@@ -17,6 +19,10 @@ const MESSAGES: Record<R2ErrorCode, string> = {
   INVALID_BOOK: "Ce flipbook est incomplet : son manifest est absent ou illisible.",
   MISSING_FILE: "Un fichier de ce flipbook est introuvable sur le PC du studio.",
   INCOMPLETE: "L’envoi vers Cloudflare R2 est incomplet. Réessayez.",
+  INDEX_INVALID:
+    "La liste des flipbooks du site (flipbooks/index.json) est illisible : elle n’a pas été modifiée.",
+  INDEX_CONFLICT:
+    "Un autre flipbook publié utilise déjà ce slug ou cette adresse courte : dépubliez-le d’abord.",
 };
 
 const BRAND = Symbol.for("vipgroup.studio.R2Error");

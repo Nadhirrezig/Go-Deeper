@@ -27,6 +27,8 @@ export interface R2Client {
   deleteObject(key: string): Promise<void>;
   /** Every object whose key starts with `prefix`, across result pages. */
   listObjects(prefix: string): Promise<R2Object[]>;
+  /** An object's content as text (e.g. flipbooks/index.json), or null when it does not exist. */
+  getText(key: string): Promise<string | null>;
 }
 
 export interface R2ClientDeps {
@@ -155,6 +157,16 @@ export function createR2Client(config: R2Config, deps: R2ClientDeps = {}): R2Cli
 
     async deleteObject(key) {
       await request(`DELETE ${key}`, () => url("DELETE", key), { method: "DELETE" }, [404]);
+    },
+
+    async getText(key) {
+      const response = await request(
+        `GET ${key}`,
+        () => url("GET", key),
+        { method: "GET", cache: "no-store" },
+        [404],
+      );
+      return response.status === 404 ? null : await response.text();
     },
 
     async listObjects(prefix) {
