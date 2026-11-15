@@ -6,7 +6,10 @@ export type LibraryErrorCode =
   | "LAST_FOLDER"
   | "SLUG_INVALID"
   | "SLUG_TAKEN"
-  | "BOOK_BUSY";
+  | "BOOK_BUSY"
+  | "NOT_READY"
+  | "BOOK_PUBLISHED"
+  | "NOT_PUBLISHED";
 
 /** A rule of the library was broken. `message` is French, ready to show to the team. */
 const BRAND = Symbol.for("vipgroup.studio.LibraryError");

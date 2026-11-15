@@ -7,6 +7,10 @@ import { DEFAULT_FOLDER_NAME } from "./repository";
 import type { LibraryRepository } from "./repository";
 
 export const INTERRUPTED_MESSAGE = "Conversion interrompue";
+export const PUBLICATION_INTERRUPTED_MESSAGES = {
+  publish: "Publication interrompue par l’arrêt du studio : relancez-la.",
+  unpublish: "Dépublication interrompue par l’arrêt du studio : relancez-la.",
+} as const;
 
 export interface ReconcileReport {
   /** Books left "converting" by a stopped studio, now "failed". */
@@ -15,6 +19,8 @@ export interface ReconcileReport {
   imported: string[];
   /** Half-written book folders (`<id>.tmp`) and uploads left by a stopped studio. */
   removed: string[];
+  /** Books left mid-publish or mid-unpublish by a stopped studio, to be started again. */
+  publicationsInterrupted: string[];
 }
 
 /**
@@ -24,7 +30,12 @@ export async function reconcileLibrary(
   repo: LibraryRepository,
   dirs: { flipbooksDir: string; uploadsDir: string },
 ): Promise<ReconcileReport> {
-  const report: ReconcileReport = { interrupted: [], imported: [], removed: [] };
+  const report: ReconcileReport = {
+    interrupted: [],
+    imported: [],
+    removed: [],
+    publicationsInterrupted: [],
+  };
   const folders = await repo.listFolders(); // creates "Général" on first run
 
   // 1. Conversions cut short by a stop: nothing will finish them.
@@ -36,6 +47,20 @@ export async function reconcileLibrary(
       error: { code: "INTERRUPTED", message: INTERRUPTED_MESSAGE },
     });
     report.interrupted.push(book.id);
+  }
+
+  // 1b. Publications cut short by a stop. Every step of a publish or unpublish can run again,
+  // so the team only has to start it again; `publishedAt` already says where it stood.
+  for (const book of await repo.listBooks()) {
+    if (!book.publication) continue;
+    await repo.updateBook(book.id, {
+      publication: undefined,
+      publicationError: {
+        code: "INTERRUPTED",
+        message: PUBLICATION_INTERRUPTED_MESSAGES[book.publication.action],
+      },
+    });
+    report.publicationsInterrupted.push(book.id);
   }
 
   // 2. Leftovers of those conversions: uploaded PDFs and half-written book folders.
