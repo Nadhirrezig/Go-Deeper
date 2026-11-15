@@ -8,6 +8,10 @@ const CONTENT_TYPES: Record<string, string> = {
   ".pdf": "application/pdf",
 };
 
+/** Content type of a book file from its name, or undefined for any other kind of file. */
+export const contentTypeOf = (file: string): string | undefined =>
+  CONTENT_TYPES[path.extname(file).toLowerCase()];
+
 /** A safe path segment: plain file/folder name, no dots first, no separators, no "%". */
 const SAFE_SEGMENT = /^[A-Za-z0-9_-][A-Za-z0-9._-]*$/;
 
@@ -74,6 +78,6 @@ export function resolveStorageFile(root: string, segments: readonly string[]): S
   const file = path.resolve(base, ...segments);
   // Defence in depth: the resolved path must still be inside the storage folder.
   if (!file.startsWith(base + path.sep)) return null;
-  const contentType = CONTENT_TYPES[path.extname(file).toLowerCase()];
+  const contentType = contentTypeOf(file);
   return contentType ? { file, contentType } : null;
 }
