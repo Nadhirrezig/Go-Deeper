@@ -44,6 +44,8 @@ fi
 # --- Download page (French, for the team) -----------------------------------------------------
 openssl x509 -in root.crt -outform der -out public/vipgroup-studio-ca.cer
 FINGERPRINT="$(openssl x509 -in root.crt -noout -fingerprint -sha256 | cut -d= -f2)"
+# Windows' install prompt shows the SHA-1 thumbprint, in groups of 8: show it the same way.
+THUMBPRINT="$(openssl x509 -in root.crt -noout -fingerprint -sha1 | cut -d= -f2 | tr -d : | sed 's/.\{8\}/& /g; s/ $//')"
 EXPIRES="$(openssl x509 -in root.crt -noout -enddate | cut -d= -f2)"
 
 # Windows installer: writes the certificate to a temporary file and adds it to the user's trusted
@@ -105,7 +107,7 @@ cat > public/index.html <<EOF
 <div class="card">
   <p><strong>Installation manuelle</strong> : téléchargez <a href="/certificat/vipgroup-studio-ca.cer" download>vipgroup-studio-ca.cer</a>, ouvrez-le, <em>Installer le certificat…</em>, <em>Utilisateur actuel</em>, <em>Placer tous les certificats dans le magasin suivant</em> → <em>Autorités de certification racines de confiance</em>, puis <em>Terminer</em> et <strong>Oui</strong>.</p>
   <p class="muted">Ce certificat ne peut garantir qu’un seul site : <strong>$HOST</strong>. Il ne permet d’intercepter aucun autre site.</p>
-  <p class="muted">Empreinte SHA-256 (à comparer avec celle affichée par Windows) :<br><code>$FINGERPRINT</code><br>Valable jusqu’au : $EXPIRES</p>
+  <p class="muted">Empreinte numérique (sha1), à comparer avec celle que Windows affiche avant « Oui » :<br><code>$THUMBPRINT</code><br>SHA-256 : <code>$FINGERPRINT</code><br>Valable jusqu’au : $EXPIRES</p>
 </div>
 </body>
 </html>
