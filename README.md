@@ -55,8 +55,8 @@ pnpm convert <file.pdf> [--out ./storage/flipbooks] [--title "…"] [--slug …]
   warnings.
 - Ctrl+C aborts and removes the half-written folder.
 - Errors print one line and exit with code 1, e.g. `Error [PASSWORD_PROTECTED]: …`. Codes:
-  `INVALID_PDF`, `PASSWORD_PROTECTED`, `EMPTY_PDF`, `TOO_MANY_PAGES` (limit 500), `OUT_DIR_EXISTS`,
-  `ABORTED`.
+  `INVALID_PDF`, `PASSWORD_PROTECTED`, `EMPTY_PDF`, `TOO_LARGE` (limit 15 MB, fixed),
+  `TOO_MANY_PAGES` (limit 500), `OUT_DIR_EXISTS`, `ABORTED`.
 
 Example:
 

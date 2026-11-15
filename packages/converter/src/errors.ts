@@ -2,6 +2,7 @@ export type ConverterErrorCode =
   | "INVALID_PDF"
   | "PASSWORD_PROTECTED"
   | "EMPTY_PDF"
+  | "TOO_LARGE"
   | "TOO_MANY_PAGES"
   | "OUT_DIR_EXISTS"
   | "ABORTED";

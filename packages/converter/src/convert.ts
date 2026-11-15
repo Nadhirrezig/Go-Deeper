@@ -3,6 +3,7 @@ import { copyFile, mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/
 import path from "node:path";
 import { performance } from "node:perf_hooks";
 import { createCanvas } from "@napi-rs/canvas";
+import { MAX_PDF_BYTES, MAX_PDF_MB } from "@vipgroup/shared";
 import type { FlipbookManifest } from "@vipgroup/shared";
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist/legacy/build/pdf.mjs";
 import sharp from "sharp";
@@ -55,6 +56,15 @@ export async function convertPdf(
   const tmpDir = path.join(outDir, `${id}.tmp`);
   if (await exists(finalDir)) {
     throw new ConverterError("OUT_DIR_EXISTS", `Book folder already exists: ${finalDir}`);
+  }
+
+  // Checked before reading, so an oversized file is never loaded into memory.
+  const size = typeof input === "string" ? (await stat(input)).size : input.byteLength;
+  if (size > MAX_PDF_BYTES) {
+    throw new ConverterError(
+      "TOO_LARGE",
+      `The PDF is ${(size / 1024 / 1024).toFixed(1)} MB; the limit is ${MAX_PDF_MB} MB.`,
+    );
   }
 
   const bytes = typeof input === "string" ? await readFile(input) : input;

@@ -1,6 +1,7 @@
 import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { MAX_PDF_BYTES } from "@vipgroup/shared";
 import type { FlipbookManifest } from "@vipgroup/shared";
 import sharp from "sharp";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -186,6 +187,14 @@ describe("convertPdf", () => {
 
   it("rejects a zero-page PDF with EMPTY_PDF", async () => {
     await expectCode(convert(await makePdf([])), "EMPTY_PDF");
+  });
+
+  it("rejects a PDF over 15 MB with TOO_LARGE, from a path or from bytes", async () => {
+    const big = new Uint8Array(MAX_PDF_BYTES + 1);
+    big.set(Buffer.from("%PDF-1.7\n"));
+    await expectCode(convert(big), "TOO_LARGE");
+    await expectCode(convertPdf(big, { outDir, sizes }), "TOO_LARGE");
+    await expect(readdir(outDir)).rejects.toThrow();
   });
 
   it("rejects too many pages with TOO_MANY_PAGES", async () => {
