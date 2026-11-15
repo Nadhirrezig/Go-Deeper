@@ -29,7 +29,7 @@ A Heyzine-style tool: the team uploads a PDF, the app converts it into a page-fl
 | 4 | Reader: PDF download + in-book search |
 | 5 | Studio: home, folders, upload + progress, folder and flipbook pages |
 | 6 | Link the studio to goexperience.travel: sub-steps S1–S9 below, in this order |
-| Later | Branding per book · Interactive pages (links, hotspots, video, table of contents) · Sharing & protection (share, page links, embed code, password, stats) |
+| Later | Branding per book · Interactive pages (links, hotspots, video, table of contents) · Sharing & protection (page links, embed code, password, stats; the share button is done in S4) |
 
 Steps 1–5 are done. Step 6 runs website-first: goexperience learns to read books, it is tested on a
 book uploaded by hand, and only then does the studio write to R2.
@@ -39,7 +39,7 @@ book uploaded by hand, and only then does the studio write to R2.
 | S1 | Go-Deeper | Fixed 15 MB PDF limit everywhere (studio and CLI) · reader package file (`.tgz`, v0.1.0) |
 | S2 | goexperience | `/api/r2` serves `flipbooks/<id>/…` (`.json`, `.webp`, `.pdf`), cache headers, PDF download name |
 | S3 | goexperience | Install the `.tgz` · `src/lib/flipbooks.ts` reads `flipbooks/index.json` (slug → book) |
-| S4 | goexperience | `src/app/[locale]/flipbook/[slug]/page.tsx`: `<Flipbook />`, metadata, 404 |
+| S4 | goexperience | Book page `src/app/[locale]/flipbook/[id]/page.tsx` (short id): `<Flipbook />`, metadata, 404, "Partager" button · collection page `/flipbook` |
 | ‖ | Nadhir | Cloudflare guide, in parallel with S2–S4: R2 write token, one test book uploaded with rclone, `index.json` by hand |
 | S5 | test | S2–S4 on the test book (local, then a Vercel preview) |
 | S6 | Go-Deeper | Studio R2 client (SigV4 PUT / DELETE) · upload one book folder |
@@ -59,8 +59,12 @@ Decisions taken for step 6:
   PC. Unpublishing deletes the book's files and removes it from `index.json`.
 - **PostgreSQL:** kept for the studio (office PC). The website never connects to it.
 - **PDF download:** streamed through goexperience's `/api/r2`; the bucket is never exposed.
-- **Public address:** `/flipbook/<slug>` under the site's locale prefix, i.e. `/fr/flipbook/<slug>` and
-  `/en/flipbook/<slug>` (a bare `/flipbook/<slug>` redirects to the visitor's language).
+- **Public address:** each book at `/flipbook/<short id>`, the first 8 characters of its id (e.g.
+  `/fr/flipbook/89dbed3b`, `/en/flipbook/89dbed3b`; a bare `/flipbook/89dbed3b` redirects to the
+  visitor's language, a full id redirects to the short one). All published books are listed at
+  `/flipbook`, newest first. The slug is no longer in the URL; it names the PDF download.
+- **Sharing:** the book page's "Partager" button shares `https://goexperience.travel/flipbook/<short id>`
+  (no locale): share sheet on phones, copy + "Lien copié" on computers.
 
 ## Architecture
 
@@ -123,8 +127,11 @@ All paths in the manifest are relative to the manifest's own URL. The reader res
   ]
 }
 ```
-- Only published books are listed; slugs are unique. goexperience reads it directly from R2 (signed
-  GET, refreshed about every 60 s) and never serves it through `/api/r2`.
+- Only published books are listed; slugs are unique, and so are short ids (the first 8 characters of
+  `id`): goexperience skips a later book that repeats either. The studio must refuse to publish a book
+  whose short id is already published (S7; 1 chance in ~4 billion per pair, but checked).
+- goexperience reads it directly from R2 (signed GET, cached 60 s) and never serves it through
+  `/api/r2`.
 
 ## Notes for S6–S8 — studio writes to R2 (private bucket, "option A")
 
@@ -157,8 +164,10 @@ All paths in the manifest are relative to the manifest's own URL. The reader res
   within a day). The rules live in goexperience `src/lib/r2-objects.ts`. S5 checks
   `x-vercel-cache: HIT` on a second request.
 - `src/proxy.ts` (next-intl) skips `/api`, so `/api/r2/flipbooks/…` is never locale-redirected.
-- The book page lives under `src/app/[locale]/` and must be dynamic (books come from R2), unlike the
-  journey pages (`dynamicParams = false`). Use `labelsEn` for `/en`.
+- Done in S4: the book page (`src/app/[locale]/flipbook/[id]/`) is rendered on every visit
+  (`force-dynamic`): with ISR, Next 16 re-rendered a cached 404 into the book's page but kept the
+  404's metadata. The collection page (`/flipbook`) is ISR, 60 s. Both read the list through
+  `src/lib/flipbooks.ts` (60 s cache, one read per request). `labelsEn` on `/en`.
 - The reader uses same-origin URLs: `<Flipbook manifestUrl="/api/r2/flipbooks/<id>/manifest.json" />`.
   No CORS is needed, and the Download button's `download` attribute works (same origin).
 - The site's existing read token already covers `flipbooks/` (R2 tokens apply to a whole bucket).
