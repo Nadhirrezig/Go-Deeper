@@ -4,6 +4,7 @@
   "private": true,
   "description": "Shared TypeScript types for the VipGroup app.",
   "type": "module",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "@vipgroup/source": "./src/index.ts",
