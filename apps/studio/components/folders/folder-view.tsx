@@ -17,11 +17,10 @@ interface FolderViewProps {
   folder: Folder;
   books: BookRecord[];
   isLastFolder: boolean;
-  maxUploadMb: number;
 }
 
 /** /flipbooks/folders/[folderId]: every flipbook of the folder, newest first. */
-export function FolderView({ folder, books, isLastFolder, maxUploadMb }: FolderViewProps) {
+export function FolderView({ folder, books, isLastFolder }: FolderViewProps) {
   const router = useRouter();
   const live = useLiveBooks(books);
   const [dialog, setDialog] = useState<FolderDialog | null>(null);
@@ -87,7 +86,6 @@ export function FolderView({ folder, books, isLastFolder, maxUploadMb }: FolderV
       <UploadDialog
         folder={dialog?.kind === "upload" ? dialog.folder : null}
         onClose={() => setDialog(null)}
-        maxUploadMb={maxUploadMb}
       />
       <DeleteBookDialog
         book={toDelete}

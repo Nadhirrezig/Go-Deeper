@@ -15,11 +15,10 @@ import { folderFiles } from "./folder-files";
 interface FolderGridProps {
   folders: Folder[];
   books: BookRecord[];
-  maxUploadMb: number;
 }
 
 /** The /flipbooks page: every folder, then the "new folder" tile. */
-export function FolderGrid({ folders, books, maxUploadMb }: FolderGridProps) {
+export function FolderGrid({ folders, books }: FolderGridProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const width = folderWidthFor(useElementWidth(gridRef));
   const live = useLiveBooks(books);
@@ -76,7 +75,6 @@ export function FolderGrid({ folders, books, maxUploadMb }: FolderGridProps) {
       <UploadDialog
         folder={dialog?.kind === "upload" ? dialog.folder : null}
         onClose={() => setDialog(null)}
-        maxUploadMb={maxUploadMb}
       />
     </>
   );

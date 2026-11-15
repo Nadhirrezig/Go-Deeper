@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { slugify } from "@vipgroup/shared";
+import { MAX_PDF_BYTES, MAX_PDF_MB, slugify } from "@vipgroup/shared";
 import type { Folder } from "@vipgroup/shared";
 import { suggestSlugAction } from "../../app/flipbooks/actions";
 import { buttonClass, inputClass } from "../ui/button";
@@ -13,8 +13,6 @@ import { usePdfUpload } from "./use-pdf-upload";
 interface UploadDialogProps {
   folder: Folder | null;
   onClose: () => void;
-  /** MAX_UPLOAD_MB, to refuse big files before sending them. */
-  maxUploadMb: number;
 }
 
 const titleFromFile = (name: string): string =>
@@ -24,7 +22,7 @@ const titleFromFile = (name: string): string =>
     .trim() || "Sans titre";
 
 /** "Nouveau flipbook": pick a PDF, set title and slug, upload, follow the conversion. */
-export function UploadDialog({ folder, onClose, maxUploadMb }: UploadDialogProps) {
+export function UploadDialog({ folder, onClose }: UploadDialogProps) {
   // A new session (fresh form) each time the modal opens.
   const [session, setSession] = useState(0);
   const [openFor, setOpenFor] = useState<Folder | null>(null);
@@ -40,22 +38,12 @@ export function UploadDialog({ folder, onClose, maxUploadMb }: UploadDialogProps
       onClose={onClose}
     >
       {/* An upload in progress carries on if the modal closes (see usePdfUpload). */}
-      {folder && (
-        <UploadFlow key={session} folder={folder} onClose={onClose} maxUploadMb={maxUploadMb} />
-      )}
+      {folder && <UploadFlow key={session} folder={folder} onClose={onClose} />}
     </Modal>
   );
 }
 
-function UploadFlow({
-  folder,
-  onClose,
-  maxUploadMb,
-}: {
-  folder: Folder;
-  onClose: () => void;
-  maxUploadMb: number;
-}) {
+function UploadFlow({ folder, onClose }: { folder: Folder; onClose: () => void }) {
   const { state, start } = usePdfUpload();
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -87,8 +75,9 @@ function UploadFlow({
   const pick = (picked: File) => {
     const isPdf = picked.type === "application/pdf" || /\.pdf$/i.test(picked.name);
     if (!isPdf) return setFileError("Choisissez un fichier PDF.");
-    if (picked.size > maxUploadMb * 1024 * 1024) {
-      return setFileError(`Ce fichier dépasse la taille maximale (${maxUploadMb} Mo).`);
+    // Refused before sending; the server and the converter check the same limit.
+    if (picked.size > MAX_PDF_BYTES) {
+      return setFileError(`Ce fichier dépasse la taille maximale (${MAX_PDF_MB} Mo).`);
     }
     setFileError(null);
     setFile(picked);

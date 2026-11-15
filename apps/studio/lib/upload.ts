@@ -6,20 +6,14 @@ import type { ConversionJob } from "./conversion/queue";
 import { isLibraryError } from "./library/errors";
 import type { LibraryRepository } from "./library/repository";
 
-/** Default upload limit, overridable with MAX_UPLOAD_MB. */
-export const DEFAULT_MAX_UPLOAD_MB = 200;
 export const TITLE_MAX = 200;
 const PDF_MAGIC = "%PDF-";
-
-export function maxUploadBytes(env: Record<string, string | undefined> = process.env): number {
-  const mb = Number(env.MAX_UPLOAD_MB);
-  return (Number.isFinite(mb) && mb > 0 ? mb : DEFAULT_MAX_UPLOAD_MB) * 1024 * 1024;
-}
 
 export interface UploadDeps {
   repo: LibraryRepository;
   enqueue: (job: ConversionJob) => void;
   uploadsDir: string;
+  /** The route passes MAX_PDF_BYTES (15 MB, fixed); tests pass smaller limits. */
   maxBytes: number;
   newId?: () => string;
 }

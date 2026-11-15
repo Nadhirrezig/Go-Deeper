@@ -4,7 +4,8 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ConversionJob } from "../lib/conversion/queue";
 import { JsonLibraryRepository } from "../lib/library/json-repository";
-import { handleUpload, maxUploadBytes } from "../lib/upload";
+import { MAX_PDF_BYTES } from "@vipgroup/shared";
+import { handleUpload } from "../lib/upload";
 import type { UploadErrorBody } from "../lib/upload";
 
 let work: string;
@@ -129,9 +130,15 @@ describe("POST /api/upload", () => {
     expect((await handleUpload(upload(["%PDF-"], { slug: "Pas Bon" }), deps())).status).toBe(400);
   });
 
-  it("reads the limit from MAX_UPLOAD_MB, 200 MB by default", () => {
-    expect(maxUploadBytes({})).toBe(200 * 1024 * 1024);
-    expect(maxUploadBytes({ MAX_UPLOAD_MB: "50" })).toBe(50 * 1024 * 1024);
-    expect(maxUploadBytes({ MAX_UPLOAD_MB: "nope" })).toBe(200 * 1024 * 1024);
+  it("refuses a PDF over the fixed 15 MB limit before reading it", async () => {
+    expect(MAX_PDF_BYTES).toBe(15 * 1024 * 1024);
+    const declared = { "content-length": String(MAX_PDF_BYTES + 1) };
+    const response = await handleUpload(upload(["%PDF-"], {}, declared), deps(MAX_PDF_BYTES));
+    expect(response.status).toBe(413);
+    expect(await errorOf(response)).toMatchObject({
+      code: "TOO_LARGE",
+      message: "Ce fichier dépasse la taille maximale (15 Mo).",
+    });
+    expect(jobs).toEqual([]);
   });
 });

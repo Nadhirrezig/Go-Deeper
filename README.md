@@ -77,7 +77,7 @@ http://localhost:3000, or `http://<pc-ip>:3000` from another device on the offic
   flipbooks (covers); click one to open it. The `···` key of a folder: **Nouveau flipbook**
   (upload a PDF into it), **Renommer**, **Supprimer** (only when empty, never the last folder).
   The dashed folder with `+` at the end creates a folder. A first run creates "Général".
-- **Nouveau flipbook**: drop or choose a PDF; the title comes from the file name and the slug
+- **Nouveau flipbook**: drop or choose a PDF (15 MB at most, a fixed limit); the title comes from the file name and the slug
   from the title (a slug already used gets `-2`, `-3`…). **Convertir** shows the upload %, then
   "Page X / Y". You can close the window: the flipbook shows "Conversion X/Y" in its folder and
   drops in when it is ready. Uploads are converted one at a time, in order.
@@ -95,7 +95,6 @@ PostgreSQL in step 6), `flipbooks/<id>/` (converted books, served by `/files/<id
 
 | Variable        | Default               | Meaning                                    |
 | --------------- | --------------------- | ------------------------------------------ |
-| `MAX_UPLOAD_MB` | `200`                 | Largest PDF the studio accepts, in MB      |
 | `STORAGE_DIR`   | `<repo>/storage`      | Folder for library.json, books and uploads |
 | `FLIPBOOKS_DIR` | `<storage>/flipbooks` | Only the converted books, elsewhere        |
 

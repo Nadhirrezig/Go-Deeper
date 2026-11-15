@@ -1,3 +1,5 @@
+import { MAX_PDF_MB } from "@vipgroup/shared";
+
 /** Maximum pages the converter accepts (its default). */
 export const MAX_PAGES = 500;
 
@@ -6,6 +8,7 @@ export const CONVERSION_MESSAGES: Record<string, string> = {
   INVALID_PDF: "Ce fichier n’est pas un PDF valide.",
   PASSWORD_PROTECTED: "Ce PDF est protégé par un mot de passe.",
   EMPTY_PDF: "Ce PDF ne contient aucune page.",
+  TOO_LARGE: `Ce PDF dépasse la taille maximale (${MAX_PDF_MB} Mo).`,
   TOO_MANY_PAGES: `Ce PDF a trop de pages (${MAX_PAGES} au maximum).`,
   OUT_DIR_EXISTS: "Un flipbook existe déjà à cet emplacement.",
   ABORTED: "Conversion annulée.",
