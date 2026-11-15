@@ -121,8 +121,15 @@ Decisions taken for step 7:
   `VIPDESTINATIONS_URL`). `Publisher.publish(id, sites)` runs the chosen sites one after the
   other (PUBLISH_SITES order) in one background operation and stops at the first failure (sites
   done before stay online); `unpublish(id, site)`; clashes are checked against each site's own
-  `index.json`. Deleting a book is refused while it is online on any site. Until V6 the book page
-  shows the GO Experience card only.
+  `index.json`. Deleting a book is refused while it is online on any site.
+- Done in V6: `components/books/publish-panel.tsx`, the "Publication" card: one row per site
+  (status with a coloured dot, progress, share link, "Voir sur le site", "Dépublier" with its own
+  confirmation); "Publier…" (off while busy, before the conversion ends, or when the book is on
+  every site) opens a window with one checkbox per site (the first site not yet online is ticked;
+  online sites are ticked and disabled). `publication.waiting` lists the sites a publish will do
+  next, so their rows say "En attente". `PUBLISH_SITE_NAMES` in `packages/shared`; the folder
+  card's badge reads "En ligne · 2" on both sites and names them. R2's ACCESS_DENIED message now
+  points at the token's access to the site's bucket.
 
 ## Architecture
 
