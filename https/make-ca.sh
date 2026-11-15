@@ -55,7 +55,7 @@ EXPIRES="$(openssl x509 -in root.crt -noout -enddate | cut -d= -f2)"
     '@echo off' \
     'setlocal' \
     'REM === A MODIFIER : IP fixe du serveur ===' \
-    'set "SERVER_IP=192.168.1.10"' \
+    'set "SERVER_IP=192.168.1.17"' \
     "set \"DOMAIN=$HOST\"" \
     'set "HOSTS=%SystemRoot%\System32\drivers\etc\hosts"' \
     '' \

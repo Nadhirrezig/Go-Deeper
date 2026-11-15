@@ -167,7 +167,7 @@ certificate authority, created on the first `docker compose up` (`https/make-ca.
 **Once, on the office network:**
 
 1. Give the office PC a fixed IP (DHCP reservation on the router): the installer defaults to
-   `192.168.1.10`.
+   `192.168.1.17`.
 2. On the office PC, allow ports 80 and 443 (PowerShell as administrator):
 
 ```bash
@@ -175,9 +175,9 @@ New-NetFirewallRule -DisplayName "VipGroup studio (HTTP/HTTPS)" -Direction Inbou
 ```
 
 **On each PC** (Chrome or Edge): open **http://studio.vipgroup.lan/certificat** (or
-`http://192.168.1.10/certificat`), download the installer, run it, answer **Oui** to Windows'
+`http://192.168.1.17/certificat`), download the installer, run it, answer **Oui** to Windows'
 question, then restart the browser. The installer needs administrator rights: it installs the
-certificate machine-wide and maps `studio.vipgroup.lan` to `192.168.1.10` in the Windows hosts
+certificate machine-wide and maps `studio.vipgroup.lan` to `192.168.1.17` in the Windows hosts
 file. If the office PC has a different fixed IP, edit `SERVER_IP` in `https/make-ca.sh`, then run
 `docker compose up -d --build ca` before downloading the installer. The page also offers the `.cer`
 file for a manual install and shows the certificate's fingerprint. Firefox keeps its own list:
