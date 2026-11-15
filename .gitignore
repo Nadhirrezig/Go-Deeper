@@ -8,6 +8,9 @@ out/
 *.tsbuildinfo
 next-env.d.ts
 
+# Package files made by `pnpm pack:flipbook` (copied into goexperience, not committed here)
+release/
+
 # Test output
 coverage/
 

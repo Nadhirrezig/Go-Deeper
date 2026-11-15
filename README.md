@@ -28,17 +28,18 @@ pnpm build
 
 ## Commands (from the repo root)
 
-| Command             | What it does                                                        |
-| ------------------- | ------------------------------------------------------------------- |
-| `pnpm dev`          | Builds the packages, then runs studio in dev mode on `0.0.0.0:3000` |
-| `pnpm build`        | Builds shared, converter, flipbook (tsup) and studio (`next build`) |
-| `pnpm start`        | Runs the built studio on `0.0.0.0:3000` (run `pnpm build` first)    |
-| `pnpm typecheck`    | `tsc --noEmit` in every package                                     |
-| `pnpm lint`         | ESLint in every package                                             |
-| `pnpm test`         | Vitest in every package that has tests                              |
-| `pnpm format`       | Prettier — rewrite all files                                        |
-| `pnpm format:check` | Prettier — check only                                               |
-| `pnpm convert …`    | Converts a PDF into a flipbook folder (see below)                   |
+| Command              | What it does                                                        |
+| -------------------- | ------------------------------------------------------------------- |
+| `pnpm dev`           | Builds the packages, then runs studio in dev mode on `0.0.0.0:3000` |
+| `pnpm build`         | Builds shared, converter, flipbook (tsup) and studio (`next build`) |
+| `pnpm start`         | Runs the built studio on `0.0.0.0:3000` (run `pnpm build` first)    |
+| `pnpm typecheck`     | `tsc --noEmit` in every package                                     |
+| `pnpm lint`          | ESLint in every package                                             |
+| `pnpm test`          | Vitest in every package that has tests                              |
+| `pnpm format`        | Prettier — rewrite all files                                        |
+| `pnpm format:check`  | Prettier — check only                                               |
+| `pnpm convert …`     | Converts a PDF into a flipbook folder (see below)                   |
+| `pnpm pack:flipbook` | Builds the reader package file for goexperience (see below)         |
 
 Run one package only: `pnpm --filter @vipgroup/flipbook test` (or `build`, `lint`, …).
 
@@ -119,6 +120,21 @@ Works in a Next.js server page without `dynamic(..., { ssr: false })`. The reade
 width of its container; its height hugs the book up to 85vh, or set one with `className`.
 Theme it with the `--vgf-*` CSS variables listed at the top of
 `packages/flipbook/src/styles.css`.
+
+### Reader package file (for goexperience.travel)
+
+The reader is not published to any registry. It ships as a package file:
+
+```bash
+pnpm pack:flipbook
+```
+
+- Builds the reader and writes `release/vipgroup-flipbook-<version>.tgz` (git-ignored here).
+- goexperience commits that file under `vendor/` and depends on
+  `"@vipgroup/flipbook": "file:vendor/vipgroup-flipbook-<version>.tgz"`. Its only dependency is
+  `page-flip` (from npm); React 18 or 19 comes from the host app; the types are self-contained.
+- To ship a reader change: raise `version` in `packages/flipbook/package.json`, run
+  `pnpm pack:flipbook`, replace the file in goexperience's `vendor/` and update the dependency.
 
 | Prop       | Default | Effect                                                                    |
 | ---------- | ------- | ------------------------------------------------------------------------- |

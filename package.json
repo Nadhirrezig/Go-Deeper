@@ -15,6 +15,7 @@
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "convert": "pnpm -s --filter \"@vipgroup/converter...\" build && node packages/converter/dist/cli.js",
+    "pack:flipbook": "pnpm --filter \"@vipgroup/flipbook...\" build && pnpm -C packages/flipbook pack --pack-destination ../../release",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
