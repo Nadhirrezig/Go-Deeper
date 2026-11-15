@@ -214,12 +214,17 @@ On the office PC it runs with Docker (above). For development, start it with `pn
   conversions can be removed there.
 - **Flipbook page** (`/flipbooks/<id>`): the reader, the details, **Télécharger le PDF** and
   **Supprimer** (removes the record and its files; refused while the book is online).
-- **Site goexperience.travel** (on the flipbook page): **Publier sur le site** uploads the book to
-  Cloudflare R2 and lists it on goexperience.travel (progress "X/Y fichiers"; the site shows it
-  within about a minute, at `/fr/flipbook/<first 8 characters of the id>`). Once online: **Voir sur
-  le site**, the link to share, and **Dépublier** (off the site's list first, then its files are
-  deleted from R2). An error is shown in French on the card; starting again is always safe. Online
-  books carry an "En ligne" badge in their folder.
+- **Publication** (on the flipbook page): one row per site, GO Experience (goexperience.travel)
+  and VIP Destinations (www.vipdestinations.fr), each with its status. **Publier…** opens a window
+  to tick one or both sites (sites where the book is already online are shown ticked and greyed);
+  the book is uploaded to each site's Cloudflare R2 bucket and listed there, one site after the
+  other (progress "X/Y fichiers", the next site shows "En attente"). Each site shows it within
+  about a minute: `/fr/flipbook/<first 8 characters of the id>` on GO Experience,
+  `/flipbook/<…>` on VIP Destinations. Once online, each row has **Voir sur le site**, the link to
+  share, and **Dépublier** (that site only: off its list first, then its files are deleted from
+  its bucket). An error is shown in French on the row of the site concerned; starting again is
+  always safe. Online books carry an "En ligne" badge in their folder ("En ligne · 2" when on both
+  sites; hover it for their names).
 
 Books converted with `pnpm convert` appear in "Général" the next time the studio starts. A
 conversion cut short by stopping the studio is shown as "Conversion interrompue".

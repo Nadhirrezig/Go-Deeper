@@ -61,6 +61,8 @@ export class Publisher {
   private lastProgressWrite = 0;
   /** The site the running operation is working on, named in its failure. */
   private runningSite: PublishSite | undefined;
+  /** The sites the running publish will do next. */
+  private waiting: PublishSite[] = [];
 
   constructor(deps: PublisherDeps) {
     this.repo = deps.repo;
@@ -89,7 +91,7 @@ export class Publisher {
     }
     // NOT_CONFIGURED is reported now, not in the background.
     const clients = chosen.map((site) => ({ site, client: this.makeClient(site) }));
-    return this.start(book, "publish", chosen[0]!, async () => {
+    return this.start(book, "publish", chosen, async () => {
       for (const { site, client } of clients) await this.runPublish(client, id, site);
     });
   }
@@ -102,7 +104,7 @@ export class Publisher {
       throw new LibraryError("NOT_PUBLISHED", "Ce flipbook n’est pas en ligne sur ce site.");
     }
     const client = this.makeClient(site);
-    return this.start(book, "unpublish", site, () => this.runUnpublish(client, id, site));
+    return this.start(book, "unpublish", [site], () => this.runUnpublish(client, id, site));
   }
 
   /** Resolves when every operation started so far has ended (tests). */
@@ -122,20 +124,33 @@ export class Publisher {
     return book;
   }
 
+  /** The record's `publication` for a step: the site worked on, and the sites after it. */
+  private publication(
+    action: Action,
+    site: PublishSite,
+    done: number,
+    total: number,
+    waiting: readonly PublishSite[],
+  ): NonNullable<BookRecord["publication"]> {
+    return { action, site, done, total, ...(waiting.length > 0 && { waiting: [...waiting] }) };
+  }
+
   private async start(
     book: BookRecord,
     action: Action,
-    site: PublishSite,
+    sites: readonly PublishSite[],
     run: () => Promise<void>,
   ): Promise<BookRecord> {
+    const [site, ...waiting] = sites as [PublishSite, ...PublishSite[]];
     const updated = await this.repo.updateBook(book.id, {
-      publication: { action, site, done: 0, total: 0 },
+      publication: this.publication(action, site, 0, 0, waiting),
       publicationError: undefined,
     });
     this.chain = this.chain.then(async () => {
       this.progressWrites = Promise.resolve();
       this.lastProgressWrite = 0;
       this.runningSite = site;
+      this.waiting = waiting;
       try {
         await run();
       } catch (error) {
@@ -150,8 +165,9 @@ export class Publisher {
     if (!book) return;
     if (site !== this.runningSite) {
       this.runningSite = site;
+      this.waiting = this.waiting.filter((next) => next !== site);
       await this.repo.updateBook(id, {
-        publication: { action: "publish", site, done: 0, total: 0 },
+        publication: this.publication("publish", site, 0, 0, this.waiting),
       });
     }
     const entry = () => ({
@@ -208,7 +224,7 @@ export class Publisher {
     const last = progress.done === progress.total;
     if (!last && time - this.lastProgressWrite < this.progressIntervalMs) return;
     this.lastProgressWrite = time;
-    const publication = { action, site, done: progress.done, total: progress.total };
+    const publication = this.publication(action, site, progress.done, progress.total, this.waiting);
     this.progressWrites = this.progressWrites
       .then(() => this.repo.updateBook(id, { publication }))
       .catch(() => undefined);

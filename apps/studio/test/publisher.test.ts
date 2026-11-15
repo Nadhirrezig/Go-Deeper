@@ -252,9 +252,24 @@ describe("two sites", () => {
     await addBook();
     putIndex({ version: 1, books: [handWritten] });
 
+    const seen: string[] = [];
+    const original = repo.updateBook.bind(repo);
+    repo.updateBook = async (id, patch) => {
+      const step = patch.publication;
+      if (step) seen.push(`${step.site} ${step.done}/${step.total} [${step.waiting ?? ""}]`);
+      return original(id, patch);
+    };
     const started = await publisher.publish(ID, ["vipdestinations", "goexperience"]);
-    expect(started.publication?.site).toBe("goexperience"); // PUBLISH_SITES order
+    // PUBLISH_SITES order; the record names the site waiting its turn.
+    expect(started.publication).toMatchObject({
+      site: "goexperience",
+      waiting: ["vipdestinations"],
+    });
     await publisher.idle();
+    expect(seen[0]).toBe("goexperience 0/0 [vipdestinations]");
+    expect(seen).toContain("goexperience 9/9 [vipdestinations]");
+    expect(seen).toContain("vipdestinations 0/0 []");
+    expect(seen.at(-1)).toBe("vipdestinations 9/9 []");
 
     for (const bucket of [r2, r2v]) {
       expect(bucket.objects.has(`${PREFIX}pages/002-zoom.webp`)).toBe(true);

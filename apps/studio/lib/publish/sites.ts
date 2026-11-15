@@ -1,4 +1,4 @@
-import { PUBLISH_SITES, shortBookId } from "@vipgroup/shared";
+import { PUBLISH_SITE_NAMES, PUBLISH_SITES, shortBookId } from "@vipgroup/shared";
 import type { PublishSite } from "@vipgroup/shared";
 
 /**
@@ -28,7 +28,7 @@ export function siteConfigs(env: Env = process.env): Record<PublishSite, SiteCon
   return {
     goexperience: {
       id: "goexperience",
-      name: "GO Experience",
+      name: PUBLISH_SITE_NAMES.goexperience,
       url: origin(read(env, "GOEXPERIENCE_URL") ?? "https://goexperience.travel"),
       bucket: read(env, "R2_BUCKET") ?? "goexperience",
       // The site's URLs start with the language; the French page is the default.
@@ -36,7 +36,7 @@ export function siteConfigs(env: Env = process.env): Record<PublishSite, SiteCon
     },
     vipdestinations: {
       id: "vipdestinations",
-      name: "VIP Destinations",
+      name: PUBLISH_SITE_NAMES.vipdestinations,
       url: origin(read(env, "VIPDESTINATIONS_URL") ?? "https://www.vipdestinations.fr"),
       bucket: read(env, "R2_BUCKET_VIPDESTINATIONS") ?? "vipdestinations",
       // The language comes from the visitor's cookie: no locale in the URL.

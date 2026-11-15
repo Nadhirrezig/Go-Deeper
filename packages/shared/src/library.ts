@@ -23,6 +23,12 @@ export type BookStatus = "converting" | "ready" | "failed";
 export const PUBLISH_SITES = ["goexperience", "vipdestinations"] as const;
 export type PublishSite = (typeof PUBLISH_SITES)[number];
 
+/** How the studio names each site. */
+export const PUBLISH_SITE_NAMES: Record<PublishSite, string> = {
+  goexperience: "GO Experience",
+  vipdestinations: "VIP Destinations",
+};
+
 export const isPublishSite = (value: unknown): value is PublishSite =>
   typeof value === "string" && (PUBLISH_SITES as readonly string[]).includes(value);
 
@@ -49,6 +55,8 @@ export interface BookRecord {
     site: PublishSite;
     done: number;
     total: number;
+    /** The other sites of this publish, still to do, in order. */
+    waiting?: PublishSite[];
   };
   /** Why the last publish or unpublish failed (on `site`): code and a French message for the team. */
   publicationError?: { code: string; message: string; site?: PublishSite };

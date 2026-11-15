@@ -60,8 +60,7 @@ export default async function BookPage({ params }: { params: Promise<{ bookId: s
         </p>
       )}
 
-      {/* Until the site choice (step 7, V6): GO Experience only, as before. */}
-      <PublishPanel book={book} site={publicSites(book.id)[0]!} />
+      <PublishPanel book={book} sites={publicSites(book.id)} />
 
       <section className="glass flex flex-col gap-5 rounded-3xl p-6 sm:flex-row sm:items-start sm:justify-between">
         <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">

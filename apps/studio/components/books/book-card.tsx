@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { publishedSites } from "@vipgroup/shared";
+import { PUBLISH_SITE_NAMES, publishedSites } from "@vipgroup/shared";
 import type { BookRecord } from "@vipgroup/shared";
 import { coverUrl, formatDate, pageCountLabel } from "../../lib/format";
 
@@ -11,6 +11,7 @@ export function BookCard({
   book: BookRecord;
   onDelete: (book: BookRecord) => void;
 }) {
+  const online = publishedSites(book).map((site) => PUBLISH_SITE_NAMES[site]);
   const progress = book.progress;
   const percent = progress?.total ? (progress.page / progress.total) * 100 : 0;
   return (
@@ -45,9 +46,14 @@ export function BookCard({
           <h3 className="truncate font-medium" title={book.title}>
             {book.title}
           </h3>
-          {publishedSites(book).length > 0 && (
-            <span className="shrink-0 rounded-full bg-emerald-600/10 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
+          {online.length > 0 && (
+            <span
+              className="shrink-0 rounded-full bg-emerald-600/10 px-2 py-0.5 text-[11px] font-medium text-emerald-800"
+              title={`En ligne sur ${online.join(" et ")}`}
+            >
               En ligne
+              {online.length > 1 && ` · ${online.length}`}
+              <span className="sr-only"> sur {online.join(" et ")}</span>
             </span>
           )}
         </div>
