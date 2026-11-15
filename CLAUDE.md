@@ -151,9 +151,11 @@ All paths in the manifest are relative to the manifest's own URL. The reader res
   cache pages and the PDF as immutable; send `original.pdf` with
   `Content-Disposition: attachment; filename="<slug>.pdf"`. The route already streams the body, so
   Vercel's 4.5 MB response limit does not apply; the 15 MB PDF limit keeps downloads small.
-- The route today sends only `Cache-Control: public, max-age=…`. Check whether Vercel's CDN caches
-  that (look for `x-vercel-cache: HIT` on a second request); if not, add `s-maxage` or
-  `CDN-Cache-Control`.
+- Done in S2: Vercel's CDN does not cache a Function response on `Cache-Control: max-age` alone, so
+  flipbook files are sent with `Cache-Control: public, max-age=31536000, immutable` (browsers) and
+  `Vercel-CDN-Cache-Control: max-age=86400` (Vercel, one day: an unpublished book leaves the CDN
+  within a day). The rules live in goexperience `src/lib/r2-objects.ts`. S5 checks
+  `x-vercel-cache: HIT` on a second request.
 - `src/proxy.ts` (next-intl) skips `/api`, so `/api/r2/flipbooks/…` is never locale-redirected.
 - The book page lives under `src/app/[locale]/` and must be dynamic (books come from R2), unlike the
   journey pages (`dynamicParams = false`). Use `labelsEn` for `/en`.
