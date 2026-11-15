@@ -80,8 +80,9 @@ in a child process with `@vipgroup/converter/worker` (built by `pnpm build`).
 
 ## Run the studio with Docker (office PC)
 
-On the office PC the studio runs with Docker Compose, which replaces pm2: a `studio` container and
-a `postgres` container (PostgreSQL 16) holding the library. It needs Docker Desktop (WSL 2 backend)
+On the office PC the studio runs with Docker Compose, which replaces pm2: a `studio` container, a
+`postgres` container (PostgreSQL 16) holding the library, and an `https` container (Caddy) that
+serves it at **https://studio.vipgroup.lan** (see "HTTPS on the office network" below). It needs Docker Desktop (WSL 2 backend)
 with **Settings → General → Start Docker Desktop when you sign in** ticked, so both come back by
 themselves after a reboot.
 
@@ -94,9 +95,11 @@ From the repo root, in PowerShell:
 docker compose up -d --build
 ```
 
-- The first build takes a few minutes. Then open http://localhost:3000, or `http://<pc-ip>:3000` on
-  the office network. If Windows asks, allow Docker Desktop on private networks.
-- Port 3000 must be free: stop any studio started before with pm2 (`pm2 list`, then
+- The first build takes a few minutes. Then open https://studio.vipgroup.lan (set up once as
+  described in "HTTPS on the office network"). If Windows asks, allow Docker Desktop on private
+  networks.
+- Ports 80 and 443 must be free on the office PC (stop IIS or any other web server). The studio
+  is no longer reachable on port 3000; stop any studio started before with pm2 (`pm2 list`, then
   `pm2 delete <name>`) or with `pnpm start`.
 - Settings come from the repo's `.env` (R2 keys, `GOEXPERIENCE_URL`, `POSTGRES_PASSWORD`), read
   when the containers start: after changing it, run `docker compose up -d` again. `STORAGE_DIR`,
@@ -112,18 +115,22 @@ docker compose up -d --build
 
 | Task                    | Command                                        |
 | ----------------------- | ---------------------------------------------- |
-| State (both healthy)    | `docker compose ps`                            |
+| State                   | `docker compose ps`                            |
 | Logs                    | `docker compose logs -f studio`                |
 | Update after `git pull` | `docker compose up -d --build`                 |
 | Stop / start again      | `docker compose stop` / `docker compose start` |
 
-**Back up** (database and books; preferably when nobody is converting or publishing), one command
-after the other, into a folder of your choice:
+`docker compose ps` shows `studio` and `postgres` healthy and `https` up; `ca` is listed only
+with `docker compose ps -a`, exited (0): it runs at each start to check the certificate authority.
+
+**Back up** (database, books and certificate authority; preferably when nobody is converting or
+publishing), one command after the other, into a folder of your choice:
 
 ```bash
 docker compose exec postgres pg_dump -U vipgroup -d vipgroup --clean --if-exists -f /tmp/library.sql
 docker compose cp postgres:/tmp/library.sql C:\VipGroupBackups\2026-11-15\library.sql
 docker compose cp studio:/data C:\VipGroupBackups\2026-11-15\data
+docker compose cp https:/ca C:\VipGroupBackups\2026-11-15\ca
 ```
 
 **Restore** a backup (replaces the current library and books):
@@ -135,6 +142,58 @@ docker compose cp C:\VipGroupBackups\2026-11-15\data\. studio:/data
 docker compose exec -u root studio chown -R node:node /data
 docker compose restart studio
 ```
+
+Restore the certificate authority only if its volume was lost (on a new PC, or after
+`docker compose down -v`); otherwise every PC would need the certificate again. Before the first
+`docker compose up`:
+
+```bash
+docker compose create ca
+docker compose cp C:\VipGroupBackups\2026-11-15\ca\. ca:/ca
+docker compose up -d --build
+```
+
+## HTTPS on the office network
+
+The studio is served at **https://studio.vipgroup.lan**. Every `http://` address (by name or by
+IP) redirects to it, except the certificate page. The certificate comes from the studio's own
+certificate authority, created on the first `docker compose up` (`https/make-ca.sh`):
+
+- it can only vouch for `studio.vipgroup.lan`, never for another site (name constraint);
+- its root private key is deleted right after creation; Caddy issues and renews the site
+  certificate by itself;
+- it lasts 10 years; then the certificate must be installed again on each PC.
+
+**Once, on the office network:**
+
+1. Give the office PC a fixed IP (DHCP reservation on the router), e.g. `192.168.1.50`.
+2. Make `studio.vipgroup.lan` point to it: a DNS entry on the office router, or else a line in
+   each PC's `C:\Windows\System32\drivers\etc\hosts` (Notepad as administrator):
+   `192.168.1.50 studio.vipgroup.lan`. On the office PC itself: `127.0.0.1 studio.vipgroup.lan`.
+3. On the office PC, allow ports 80 and 443 (PowerShell as administrator):
+
+```bash
+New-NetFirewallRule -DisplayName "VipGroup studio (HTTP/HTTPS)" -Direction Inbound -Protocol TCP -LocalPort 80,443 -Action Allow -Profile Private
+```
+
+**On each PC** (Chrome or Edge): open **http://studio.vipgroup.lan/certificat** (or
+`http://192.168.1.50/certificat`), download the installer, run it, answer **Oui** to Windows'
+question, restart the browser, then open https://studio.vipgroup.lan. No administrator rights are
+needed (the certificate is installed for the Windows user). The page also offers the `.cer` file
+for a manual install and shows the certificate's fingerprint. Firefox keeps its own list: set
+`security.enterprise_roots.enabled` to `true` in `about:config`.
+
+To remove it from a PC: `certutil -user -delstore Root "VipGroup Studio CA (studio.vipgroup.lan)"`.
+
+**Another name:** set `STUDIO_HOST` in `.env`, then (the authority is made for one name):
+
+```bash
+docker compose down
+docker volume rm vipgroup_ca vipgroup_caddy-data
+docker compose up -d
+```
+
+and install the new certificate on every PC (remove the old one first).
 
 ## Use the studio
 
@@ -236,6 +295,8 @@ Ctrl/Cmd+F search (↑ ↓ choose a result, Enter opens it) · Esc closes search
 full screen. Outside the reader, Ctrl/Cmd+F stays the browser's own find.
 
 ## Open the studio from another device (office Wi-Fi)
+
+With Docker, use https://studio.vipgroup.lan (see "HTTPS on the office network"). Without Docker:
 
 1. `pnpm dev` (or `pnpm build && pnpm start`) on the office PC.
 2. Find the PC's IP: `ipconfig` (Windows) or `ip addr` / `ifconfig` (Linux/macOS).

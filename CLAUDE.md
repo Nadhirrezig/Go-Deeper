@@ -81,7 +81,7 @@ vipgroup-app/                 pnpm workspace
 └─ README.md
 ```
 
-- **studio** is never deployed publicly. It runs on the office LAN (`next start -H 0.0.0.0`, kept alive with pm2; from S8a, with Docker Compose).
+- **studio** is never deployed publicly. It runs on the office LAN (`next start -H 0.0.0.0`, kept alive with pm2; from S8a, with Docker Compose; served at https://studio.vipgroup.lan by a Caddy container with its own certificate authority).
 - **converter** runs inside studio (server side) and from the CLI. Heavy work stays on the office machine.
 - **flipbook** must work in any React 18/19 + Next.js app without the host's Tailwind config. It is consumed by studio (preview) and by goexperience.travel (installed from a package file committed in that repo — S1 / S3).
 - Book files (images, PDF, `manifest.json`, `search.json`) go to the private Cloudflare R2 bucket used by goexperience.travel, which serves them through its own `/api/r2` route (S2, S6–S7, see notes below). Until a book is published, they live in a local folder (`./storage/flipbooks/<id>/`).
@@ -198,6 +198,26 @@ All paths in the manifest are relative to the manifest's own URL. The reader res
 - Write down backups (volume copy, `pg_dump`) and the update routine (`git pull` +
   `docker compose up -d --build`) in the README.
 
+## Notes for HTTPS on the office network (after S8b)
+
+- Done (decisions: our own certificate, name `studio.vipgroup.lan`, Windows PCs only; Let's
+  Encrypt needs a public domain): two Compose services in `https/`.
+  - `ca` (one-shot, `https/Dockerfile` + `make-ca.sh`, alpine + openssl): on the first start,
+    creates a root and an intermediate (EC P-256, 10 years), both name-constrained to
+    `DNS:$STUDIO_HOST`, then deletes the root key. Every start rewrites the download page in
+    `/ca/public` (`vipgroup-studio-ca.cer`, `installer-certificat.cmd` = `certutil -user -addstore
+    Root`, no admin, `index.html` in French with the fingerprint). Volume `ca`.
+  - `https` (`caddy:2-alpine`, `https/Caddyfile`): ports 80/443; Caddy's internal PKI signs
+    12-hour site certificates with our intermediate and renews them; `http://` → 308 to
+    `https://$STUDIO_HOST` except `/certificat` (served over HTTP so a PC without the certificate
+    can install it); reverse proxy to `studio:3000`. Volume `caddy-data`.
+  - `studio` no longer publishes port 3000 (`expose` only). `STUDIO_HOST` in `.env.example`
+    (changing it = delete volumes `ca` and `caddy-data`, reinstall on every PC).
+- Tested in Docker: trusted chain, untrusted without the root, redirects by name and IP (path and
+  query kept), download page, CRLF installer, port 3000 closed, certificates for other names
+  refused by the constraint, server actions through the proxy, recreate keeps the authority,
+  `ca` backup and restore. Not testable here: the `.cmd` on Windows and the office DNS.
+
 ## Notes for S2–S5 — goexperience.travel (repo `Nadhirrezig/Go-expereince-Travel`)
 
 - Next.js 16 + React 19 + next-intl, deployed on Vercel. It reads the private bucket through
@@ -249,7 +269,8 @@ All paths in the manifest are relative to the manifest's own URL. The reader res
 - `pnpm typecheck` · `pnpm lint` · `pnpm test`
 - `pnpm convert <file.pdf> --out <dir>` — converter CLI (from step 2)
 - `pnpm pack:flipbook` — reader package file for goexperience (from S1)
-- `docker compose up -d --build` — studio on the office PC (from S8a; README "Run the studio with Docker")
+- `docker compose up -d --build` — studio on the office PC (from S8a; README "Run the studio with Docker"),
+  at https://studio.vipgroup.lan (README "HTTPS on the office network")
 
 ## Definition of done (every step)
 
