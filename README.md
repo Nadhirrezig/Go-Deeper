@@ -7,6 +7,7 @@ Current module: **Flipbooks** — upload a PDF, convert it to a page-flip book, 
 
 - Node.js 22 LTS (`nvm use` reads `.nvmrc`)
 - pnpm 10 — enable it with `corepack enable` (version pinned in `package.json` → `packageManager`)
+- Office PC: Docker Desktop (see "Run the studio with Docker")
 
 ## Structure
 
@@ -68,10 +69,50 @@ pnpm convert ~/Downloads/brochure.pdf --title "Test brochure"
 Library use: `import { convertPdf } from "@vipgroup/converter"`. The studio runs each conversion
 in a child process with `@vipgroup/converter/worker` (built by `pnpm build`).
 
+## Run the studio with Docker (office PC)
+
+On the office PC the studio runs with Docker Compose, which replaces pm2. It needs Docker Desktop
+(WSL 2 backend) with **Settings → General → Start Docker Desktop when you sign in** ticked, so the
+studio comes back by itself after a reboot.
+
+From the repo root, in PowerShell:
+
+```bash
+docker compose up -d --build
+```
+
+- The first build takes a few minutes. Then open http://localhost:3000, or `http://<pc-ip>:3000` on
+  the office network. If Windows asks, allow Docker Desktop on private networks.
+- Port 3000 must be free: stop any studio started before with pm2 (`pm2 list`, then
+  `pm2 delete <name>`) or with `pnpm start`.
+- Settings come from the repo's `.env` (R2 keys, `GOEXPERIENCE_URL`), read when the container
+  starts: after changing it, run `docker compose up -d` again. `STORAGE_DIR` and `FLIPBOOKS_DIR`
+  are ignored in Docker.
+- The data (library, converted books, uploads) lives in the Docker volume `vipgroup_studio-data`,
+  mounted at `/data`. It survives restarts, rebuilds and `docker compose down`;
+  `docker compose down -v` **deletes it**.
+
+| Task                       | Command                                                        |
+| -------------------------- | -------------------------------------------------------------- |
+| State (should say healthy) | `docker compose ps`                                            |
+| Logs                       | `docker compose logs -f studio`                                |
+| Update after `git pull`    | `docker compose up -d --build`                                 |
+| Stop / start again         | `docker compose stop` / `docker compose start`                 |
+| Back up the data           | `docker compose cp studio:/data C:\VipGroupBackups\2026-11-15` |
+
+Restore a backup (replaces the current data), one command after the other:
+
+```bash
+docker compose cp C:\VipGroupBackups\2026-11-15\. studio:/data
+docker compose exec -u root studio chown -R node:node /data
+docker compose restart studio
+```
+
 ## Use the studio
 
-Start it with `pnpm dev` (or `pnpm build && pnpm start` for production speed) and open
-http://localhost:3000, or `http://<pc-ip>:3000` from another device on the office network.
+On the office PC it runs with Docker (above). For development, start it with `pnpm dev` (or
+`pnpm build && pnpm start` for production speed) and open http://localhost:3000, or
+`http://<pc-ip>:3000` from another device on the office network.
 
 - **Home**: the Flipbooks card (Blogs comes later).
 - **Flipbooks** (`/flipbooks`): one glass folder per folder. Click a folder to fan out its

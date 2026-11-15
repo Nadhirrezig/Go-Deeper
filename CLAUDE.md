@@ -169,9 +169,16 @@ All paths in the manifest are relative to the manifest's own URL. The reader res
   (Node 22 as in `.nvmrc`, pnpm through corepack, multi-stage: install → `pnpm build` → runtime with
   `next start -H 0.0.0.0 -p 3000`); `ports: "3000:3000"` for the LAN; `env_file: .env`;
   `restart: unless-stopped` replaces pm2. Books in a named volume mounted at `/data` with
-  `STORAGE_DIR=/data` (a named volume, not a OneDrive folder: faster, no sync locks). Give a
-  one-time command to copy today's `storage/` into the volume. The conversion worker (child process)
-  runs inside the container as today.
+  `STORAGE_DIR=/data` (a named volume, not a OneDrive folder: faster, no sync locks). The
+  conversion worker (child process) runs inside the container as today.
+- Done in S8a (decisions: Docker volume, start with an empty library, no copy of the old
+  `storage/`): `Dockerfile` (node:22-bookworm-slim, corepack pnpm cached at build, workspace
+  layout kept so the worker is found, runs as `node`, `next start` directly), `.dockerignore`
+  (no `.env`, no `storage/`), `docker-compose.yml` (project `vipgroup`, service `studio`, port 3000,
+  `env_file: .env` optional, `STORAGE_DIR`/`FLIPBOOKS_DIR` forced to `/data`, volume `studio-data`,
+  healthcheck, log rotation). Tested in Docker: build, healthy start, conversion, Publier, restart,
+  down/up, backup and restore. The image is ~1.6 GB (whole workspace with dev tools; Next's
+  `output: "standalone"` could shrink it later).
 - S8b: a `postgres` service (pinned `postgres:<major>` image, named volume `postgres-data`, password
   from `.env`, not published on the LAN: only the studio reaches it), with a healthcheck the studio
   waits for. `PostgresLibraryRepository` implements `LibraryRepository`; a one-time import reads the
@@ -231,6 +238,7 @@ All paths in the manifest are relative to the manifest's own URL. The reader res
 - `pnpm typecheck` · `pnpm lint` · `pnpm test`
 - `pnpm convert <file.pdf> --out <dir>` — converter CLI (from step 2)
 - `pnpm pack:flipbook` — reader package file for goexperience (from S1)
+- `docker compose up -d --build` — studio on the office PC (from S8a; README "Run the studio with Docker")
 
 ## Definition of done (every step)
 
