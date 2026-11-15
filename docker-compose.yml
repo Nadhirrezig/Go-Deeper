@@ -1,6 +1,6 @@
 # VipGroup studio on the office PC. From the repo root: `docker compose up -d --build`, then
-# http://localhost:3000 (or http://<pc-ip>:3000 on the office network). README: "Run the studio
-# with Docker". Needs POSTGRES_PASSWORD in the repo's .env (see .env.example).
+# https://studio.vipgroup.lan (README: "Run the studio with Docker" and "HTTPS on the office
+# network"). Needs POSTGRES_PASSWORD in the repo's .env (see .env.example).
 name: vipgroup
 
 services:
@@ -9,8 +9,9 @@ services:
     image: vipgroup-studio
     # Starts again after a crash and when Docker Desktop starts with Windows (replaces pm2).
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    # Not opened on the network: the "https" service is the only way in.
+    expose:
+      - "3000"
     # R2 keys, GOEXPERIENCE_URL… from the repo's .env, read when the container starts.
     env_file:
       - path: .env
@@ -66,6 +67,41 @@ services:
       retries: 5
     logging: *logging
 
+  # Once: creates the studio's own certificate authority in the `ca` volume (https/make-ca.sh),
+  # then exits. Later starts only write the download page again.
+  ca:
+    build: ./https
+    image: vipgroup-ca
+    environment:
+      STUDIO_HOST: ${STUDIO_HOST:-studio.vipgroup.lan}
+    volumes:
+      - ca:/ca
+
+  # HTTPS for the office network: https://studio.vipgroup.lan → studio; http:// → redirect,
+  # except /certificat (the page to install the certificate on each PC).
+  https:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      STUDIO_HOST: ${STUDIO_HOST:-studio.vipgroup.lan}
+    volumes:
+      - ./https/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ca:/ca:ro
+      - caddy-data:/data
+    depends_on:
+      ca:
+        condition: service_completed_successfully
+      studio:
+        condition: service_healthy
+    logging: *logging
+
 volumes:
   studio-data:
   postgres-data:
+  # The certificate authority: losing it means installing a new certificate on every PC.
+  ca:
+  # Caddy's own state (the site certificates it issued and renews).
+  caddy-data:

@@ -1,0 +1,45 @@
+# HTTPS in front of the studio (docker-compose.yml, service "https"). Certificates come from the
+# studio's own authority (https/make-ca.sh), never from the internet; Caddy renews the site's
+# certificate by itself.
+{
+	skip_install_trust
+	pki {
+		ca vipgroup {
+			name "VipGroup Studio"
+			root {
+				cert /ca/root.crt
+			}
+			intermediate {
+				cert /ca/intermediate.crt
+				key /ca/intermediate.key
+			}
+		}
+	}
+}
+
+# Plain HTTP, on any name or IP: the certificate page (it must open before the certificate is
+# installed) and a redirect to HTTPS for everything else.
+http:// {
+	handle_path /certificat* {
+		root * /ca/public
+		file_server
+	}
+	handle {
+		redir https://{$STUDIO_HOST}{uri} 308
+	}
+}
+
+https://{$STUDIO_HOST} {
+	tls {
+		issuer internal {
+			ca vipgroup
+		}
+	}
+	handle_path /certificat* {
+		root * /ca/public
+		file_server
+	}
+	handle {
+		reverse_proxy studio:3000
+	}
+}
