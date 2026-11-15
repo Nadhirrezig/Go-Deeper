@@ -85,7 +85,13 @@ http://localhost:3000, or `http://<pc-ip>:3000` from another device on the offic
 - **Folder page** (`/flipbooks/folders/<id>`): every flipbook of the folder, newest first; failed
   conversions can be removed there.
 - **Flipbook page** (`/flipbooks/<id>`): the reader, the details, **Télécharger le PDF** and
-  **Supprimer** (removes the record and its files).
+  **Supprimer** (removes the record and its files; refused while the book is online).
+- **Site goexperience.travel** (on the flipbook page): **Publier sur le site** uploads the book to
+  Cloudflare R2 and lists it on goexperience.travel (progress "X/Y fichiers"; the site shows it
+  within about a minute, at `/fr/flipbook/<first 8 characters of the id>`). Once online: **Voir sur
+  le site**, the link to share, and **Dépublier** (off the site's list first, then its files are
+  deleted from R2). An error is shown in French on the card; starting again is always safe. Online
+  books carry an "En ligne" badge in their folder.
 
 Books converted with `pnpm convert` appear in "Général" the next time the studio starts. A
 conversion cut short by stopping the studio is shown as "Conversion interrompue".
@@ -94,19 +100,20 @@ Storage (all under `storage/`, never committed): `library.json` (folders and boo
 PostgreSQL in step 6), `flipbooks/<id>/` (converted books, served by `/files/<id>/…`) and
 `uploads/` (PDFs waiting for conversion, emptied as they finish).
 
-| Variable                                                    | Default               | Meaning                                                   |
-| ----------------------------------------------------------- | --------------------- | --------------------------------------------------------- |
-| `STORAGE_DIR`                                               | `<repo>/storage`      | Folder for library.json, books and uploads                |
-| `FLIPBOOKS_DIR`                                             | `<storage>/flipbooks` | Only the converted books, elsewhere                       |
-| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | none                  | Cloudflare R2 token the studio publishes with (see below) |
-| `R2_BUCKET`                                                 | `goexperience`        | R2 bucket goexperience.travel reads                       |
+| Variable                                                    | Default                       | Meaning                                                   |
+| ----------------------------------------------------------- | ----------------------------- | --------------------------------------------------------- |
+| `STORAGE_DIR`                                               | `<repo>/storage`              | Folder for library.json, books and uploads                |
+| `FLIPBOOKS_DIR`                                             | `<storage>/flipbooks`         | Only the converted books, elsewhere                       |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | none                          | Cloudflare R2 token the studio publishes with (see below) |
+| `R2_BUCKET`                                                 | `goexperience`                | R2 bucket goexperience.travel reads                       |
+| `GOEXPERIENCE_URL`                                          | `https://goexperience.travel` | Site address for "Voir sur le site" and share links       |
 
 Set them in `.env` (see `.env.example`).
 
 **Cloudflare R2.** Published books go to `flipbooks/<id>/` in the private R2 bucket that
 goexperience.travel reads (setup: the "Cloudflare R2 setup guide" doc). The studio signs its
 requests itself (`apps/studio/lib/r2/`, no SDK) with its own token: "Object Read & Write" on the
-`goexperience` bucket only. The **Publier / Dépublier** buttons that use it come in S7.
+`goexperience` bucket only. **Publier / Dépublier** (flipbook page) use it.
 
 Tip: keep the repo (and so `storage/`) outside OneDrive or other synced folders — every book
 adds hundreds of image files, which slows conversion and can lock files during sync.

@@ -44,7 +44,8 @@ book uploaded by hand, and only then does the studio write to R2.
 | S5 | test | S2–S4 on the test book (local, then a Vercel preview) |
 | S6 | Go-Deeper | Studio R2 client (SigV4 PUT / DELETE) · upload one book folder |
 | S7 | Go-Deeper | "Publier / Dépublier": upload or delete the book, update `flipbooks/index.json` |
-| S8 | Go-Deeper | PostgreSQL replaces `library.json` (behind `LibraryRepository`) |
+| S8a | Go-Deeper | Docker Compose: the studio runs in a container on the office PC (replaces pm2), books in a volume |
+| S8b | Go-Deeper | PostgreSQL as a second Compose service; it replaces `library.json` (behind `LibraryRepository`) |
 | S9 | test | End to end, Vercel cache, a 15 MB PDF, phones |
 
 Decisions taken for step 6:
@@ -80,7 +81,7 @@ vipgroup-app/                 pnpm workspace
 └─ README.md
 ```
 
-- **studio** is never deployed publicly. It runs on the office LAN (`next start -H 0.0.0.0`, kept alive with pm2).
+- **studio** is never deployed publicly. It runs on the office LAN (`next start -H 0.0.0.0`, kept alive with pm2; from S8a, with Docker Compose).
 - **converter** runs inside studio (server side) and from the CLI. Heavy work stays on the office machine.
 - **flipbook** must work in any React 18/19 + Next.js app without the host's Tailwind config. It is consumed by studio (preview) and by goexperience.travel (installed from a package file committed in that repo — S1 / S3).
 - Book files (images, PDF, `manifest.json`, `search.json`) go to the private Cloudflare R2 bucket used by goexperience.travel, which serves them through its own `/api/r2` route (S2, S6–S7, see notes below). Until a book is published, they live in a local folder (`./storage/flipbooks/<id>/`).
@@ -152,8 +153,32 @@ All paths in the manifest are relative to the manifest's own URL. The reader res
   `R2Error` with French messages), `book-sync.ts` (`uploadBookFolder`: files from the manifest,
   manifest last, then checked by listing; `deleteBookFolder`: book ids only, manifest first). Tested
   with a fake R2 only: real R2 is first used by S7's buttons. S7 adds a GET for `index.json`.
-- S8 (PostgreSQL) runs on the office PC only. It needs a PostgreSQL server installed there and a
-  driver dependency: ask before adding it.
+- Done in S7: `apps/studio/lib/publish/publisher.ts` runs Publier / Dépublier one at a time in the
+  background (record fields `publishedAt`, `publication` progress, `publicationError`); publish =
+  check `index.json` for a slug / short-id clash, upload, then add the entry; unpublish = remove the
+  entry, then delete the files. Every step can run again, so an interrupted operation (cleared at
+  start-up) is fixed by starting it again. `lib/r2/published-index.ts` keeps entries it did not
+  write and never overwrites an unreadable `index.json`. Deleting an online book is refused.
+
+## Notes for S8 — Docker Compose on the office PC, then PostgreSQL
+
+- The office PC runs Windows: Docker Desktop with the WSL 2 backend, set to start with Windows.
+  Images are Linux, so `sharp` and `@napi-rs/canvas` install their Linux builds in the image (no
+  Windows native-module issues).
+- S8a, `docker-compose.yml` + `Dockerfile` at the repo root: one `studio` service built from the repo
+  (Node 22 as in `.nvmrc`, pnpm through corepack, multi-stage: install → `pnpm build` → runtime with
+  `next start -H 0.0.0.0 -p 3000`); `ports: "3000:3000"` for the LAN; `env_file: .env`;
+  `restart: unless-stopped` replaces pm2. Books in a named volume mounted at `/data` with
+  `STORAGE_DIR=/data` (a named volume, not a OneDrive folder: faster, no sync locks). Give a
+  one-time command to copy today's `storage/` into the volume. The conversion worker (child process)
+  runs inside the container as today.
+- S8b: a `postgres` service (pinned `postgres:<major>` image, named volume `postgres-data`, password
+  from `.env`, not published on the LAN: only the studio reaches it), with a healthcheck the studio
+  waits for. `PostgresLibraryRepository` implements `LibraryRepository`; a one-time import reads the
+  existing `library.json`. No PostgreSQL install on Windows is needed. The driver is a new
+  dependency: ask before adding it. Every new variable goes to `.env.example`.
+- Write down backups (volume copy, `pg_dump`) and the update routine (`git pull` +
+  `docker compose up -d --build`) in the README.
 
 ## Notes for S2–S5 — goexperience.travel (repo `Nadhirrezig/Go-expereince-Travel`)
 
