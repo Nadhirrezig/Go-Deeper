@@ -28,9 +28,39 @@ A Heyzine-style tool: the team uploads a PDF, the app converts it into a page-fl
 | 3 | `@vipgroup/flipbook` reader core: flip + sound, double/single page, thumbnails, zoom, fullscreen, keyboard/swipe, lazy loading |
 | 4 | Reader: PDF download + in-book search |
 | 5 | Studio: home, folders, upload + progress, folder and flipbook pages |
-| 6 | Cloud storage + PostgreSQL: upload books, folders table, draft / published status |
-| 7 | goexperience.travel integration: package published, `/flipbook/[slug]` route, `<Flipbook />` |
+| 6 | Link the studio to goexperience.travel: sub-steps S1–S9 below, in this order |
 | Later | Branding per book · Interactive pages (links, hotspots, video, table of contents) · Sharing & protection (share, page links, embed code, password, stats) |
+
+Steps 1–5 are done. Step 6 runs website-first: goexperience learns to read books, it is tested on a
+book uploaded by hand, and only then does the studio write to R2.
+
+| Sub-step | Repo | Content |
+| --- | --- | --- |
+| S1 | Go-Deeper | Fixed 15 MB PDF limit everywhere (studio and CLI) · reader package file (`.tgz`, v0.1.0) |
+| S2 | goexperience | `/api/r2` serves `flipbooks/<id>/…` (`.json`, `.webp`, `.pdf`), cache headers, PDF download name |
+| S3 | goexperience | Install the `.tgz` · `src/lib/flipbooks.ts` reads `flipbooks/index.json` (slug → book) |
+| S4 | goexperience | `src/app/[locale]/flipbook/[slug]/page.tsx`: `<Flipbook />`, metadata, 404 |
+| ‖ | Nadhir | Cloudflare guide, in parallel with S2–S4: R2 write token, one test book uploaded with rclone, `index.json` by hand |
+| S5 | test | S2–S4 on the test book (local, then a Vercel preview) |
+| S6 | Go-Deeper | Studio R2 client (SigV4 PUT / DELETE) · upload one book folder |
+| S7 | Go-Deeper | "Publier / Dépublier": upload or delete the book, update `flipbooks/index.json` |
+| S8 | Go-Deeper | PostgreSQL replaces `library.json` (behind `LibraryRepository`) |
+| S9 | test | End to end, Vercel cache, a 15 MB PDF, phones |
+
+Decisions taken for step 6:
+- **PDF limit:** 15 MB, fixed (no env var, no CLI flag), checked by the studio upload and by the
+  converter itself.
+- **Package delivery:** no registry. `pnpm pack:flipbook` builds `vipgroup-flipbook-<version>.tgz`; it
+  is committed in goexperience under `vendor/` and installed as `file:vendor/…`. The name stays
+  `@vipgroup/flipbook`.
+- **Bucket layout:** one folder per book id (`flipbooks/<id>/`) plus the published list
+  `flipbooks/index.json` (contract below).
+- **Draft / published:** a book is uploaded to R2 only when it is published; drafts stay on the office
+  PC. Unpublishing deletes the book's files and removes it from `index.json`.
+- **PostgreSQL:** kept for the studio (office PC). The website never connects to it.
+- **PDF download:** streamed through goexperience's `/api/r2`; the bucket is never exposed.
+- **Public address:** `/flipbook/<slug>` under the site's locale prefix, i.e. `/fr/flipbook/<slug>` and
+  `/en/flipbook/<slug>` (a bare `/flipbook/<slug>` redirects to the visitor's language).
 
 ## Architecture
 
@@ -48,8 +78,8 @@ vipgroup-app/                 pnpm workspace
 
 - **studio** is never deployed publicly. It runs on the office LAN (`next start -H 0.0.0.0`, kept alive with pm2).
 - **converter** runs inside studio (server side) and from the CLI. Heavy work stays on the office machine.
-- **flipbook** must work in any React 18/19 + Next.js app without the host's Tailwind config. It is consumed by studio (preview) and by goexperience.travel (installed as a private package from GitHub Packages — set up in step 7).
-- Book files (images, PDF, `manifest.json`, `search.json`) go to the private Cloudflare R2 bucket used by goexperience.travel, which serves them through its own `/api/r2` route (step 6, see notes below). Until then, they live in a local folder (`./storage/flipbooks/<id>/`).
+- **flipbook** must work in any React 18/19 + Next.js app without the host's Tailwind config. It is consumed by studio (preview) and by goexperience.travel (installed from a package file committed in that repo — S1 / S3).
+- Book files (images, PDF, `manifest.json`, `search.json`) go to the private Cloudflare R2 bucket used by goexperience.travel, which serves them through its own `/api/r2` route (S2, S6–S7, see notes below). Until a book is published, they live in a local folder (`./storage/flipbooks/<id>/`).
 
 ### Book output format (contract between converter and reader)
 
@@ -82,12 +112,27 @@ export interface FlipbookManifest {
 ```
 All paths in the manifest are relative to the manifest's own URL. The reader resolves them against a `baseUrl`. Change this contract only when a step says so.
 
-## Notes for step 6 — storage decided: Cloudflare R2, private bucket ("option A")
+### Published list (contract between studio and goexperience)
+
+`flipbooks/index.json` in the bucket, written by the studio (S7), read server-side by goexperience (S3):
+```json
+{
+  "version": 1,
+  "books": [
+    { "slug": "brochure-ete", "id": "<uuid>", "title": "…", "pageCount": 24, "publishedAt": "<ISO>" }
+  ]
+}
+```
+- Only published books are listed; slugs are unique. goexperience reads it directly from R2 (signed
+  GET, refreshed about every 60 s) and never serves it through `/api/r2`.
+
+## Notes for S6–S8 — studio writes to R2 (private bucket, "option A")
 
 - Use the existing R2 bucket `goexperience` (the one goexperience.travel already uses). It stays
   private: no public access, no r2.dev address, no custom domain, no CORS rule.
 - Each book goes to `flipbooks/<id>/` with exactly the "Book output format" layout above. Upload
-  every file with its Content-Type (`application/json`, `image/webp`, `application/pdf`).
+  every file with its Content-Type (`application/json`, `image/webp`, `application/pdf`). Upload
+  the book's files first and update `index.json` last, so the site never lists a half-uploaded book.
 - The studio writes with its own R2 API token: "Object Read & Write", limited to the `goexperience`
   bucket. Nadhir creates it in the Cloudflare dashboard (R2 → Manage API tokens); the keys live only
   in the office PC's `.env` (variable names in `.env.example`), never in chat or in git.
@@ -95,14 +140,23 @@ All paths in the manifest are relative to the manifest's own URL. The reader res
   that approach for PUT / DELETE if possible; ask before adding an S3 SDK.
 - The Cloudflare connector ("Developer Platform") can list and inspect buckets, but cannot upload
   files, create tokens or change bucket settings.
+- S8 (PostgreSQL) runs on the office PC only. It needs a PostgreSQL server installed there and a
+  driver dependency: ask before adding it.
 
-## Notes for step 7 — goexperience.travel (repo `Nadhirrezig/Go-expereince-Travel`)
+## Notes for S2–S5 — goexperience.travel (repo `Nadhirrezig/Go-expereince-Travel`)
 
 - Next.js 16 + React 19 + next-intl, deployed on Vercel. It reads the private bucket through
   `src/app/api/r2/[...key]/route.ts` (signed GET), which today allows only `journeys/` and images.
-- Extend that route for `flipbooks/`: allow `.json`, `.webp`, `.pdf`, keep the `..` check; cache
-  pages and the PDF as immutable; send `original.pdf` with
-  `Content-Disposition: attachment; filename="<slug>.pdf"`.
+- Extend that route for `flipbooks/<id>/…` only: allow `.json`, `.webp`, `.pdf`, keep the `..` check;
+  cache pages and the PDF as immutable; send `original.pdf` with
+  `Content-Disposition: attachment; filename="<slug>.pdf"`. The route already streams the body, so
+  Vercel's 4.5 MB response limit does not apply; the 15 MB PDF limit keeps downloads small.
+- The route today sends only `Cache-Control: public, max-age=…`. Check whether Vercel's CDN caches
+  that (look for `x-vercel-cache: HIT` on a second request); if not, add `s-maxage` or
+  `CDN-Cache-Control`.
+- `src/proxy.ts` (next-intl) skips `/api`, so `/api/r2/flipbooks/…` is never locale-redirected.
+- The book page lives under `src/app/[locale]/` and must be dynamic (books come from R2), unlike the
+  journey pages (`dynamicParams = false`). Use `labelsEn` for `/en`.
 - The reader uses same-origin URLs: `<Flipbook manifestUrl="/api/r2/flipbooks/<id>/manifest.json" />`.
   No CORS is needed, and the Download button's `download` attribute works (same origin).
 - The site's existing read token already covers `flipbooks/` (R2 tokens apply to a whole bucket).
@@ -135,6 +189,7 @@ All paths in the manifest are relative to the manifest's own URL. The reader res
 - `pnpm build` — build all packages and studio
 - `pnpm typecheck` · `pnpm lint` · `pnpm test`
 - `pnpm convert <file.pdf> --out <dir>` — converter CLI (from step 2)
+- `pnpm pack:flipbook` — reader package file for goexperience (from S1)
 
 ## Definition of done (every step)
 
