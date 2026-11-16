@@ -5,6 +5,10 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { JsonLibraryRepository } from "../lib/library/json-repository";
 import { libraryContract } from "./library-contract";
 
+/** Errors Windows may give a reader while a file is renamed over (see the atomic write test). */
+const WINDOWS_RENAME_GAP = new Set(["ENOENT", "EPERM", "EBUSY", "EACCES"]);
+const errorCode = (error: unknown): string => (error as NodeJS.ErrnoException).code ?? "";
+
 let work: string;
 let file: string;
 let repo: JsonLibraryRepository;
@@ -33,7 +37,17 @@ describe("storage", () => {
     let reads = 0;
     const reader = (async () => {
       while (reading) {
-        JSON.parse(await readFile(file, "utf8"));
+        let text: string;
+        try {
+          text = await readFile(file, "utf8");
+        } catch (error) {
+          // On Windows, renaming over a file is not one step: a reader outside the studio's
+          // queue (only this test) can find no file, or a locked one, for an instant. The
+          // content is still never half-written, which is what this test checks.
+          if (process.platform === "win32" && WINDOWS_RENAME_GAP.has(errorCode(error))) continue;
+          throw error;
+        }
+        JSON.parse(text);
         reads++;
       }
     })();
