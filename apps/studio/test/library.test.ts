@@ -32,28 +32,31 @@ libraryContract("library.json", async (newId) => ({
 describe("storage", () => {
   it("writes atomically: never a half-written file, no temp file left", async () => {
     await repo.listFolders();
-    // Read the file over and over while many writes happen: every read parses.
-    let reading = true;
+    // Each write is overlapped by reads from outside the studio's queue: every read parses.
     let reads = 0;
-    const reader = (async () => {
-      while (reading) {
-        let text: string;
-        try {
-          text = await readFile(file, "utf8");
-        } catch (error) {
-          // On Windows, renaming over a file is not one step: a reader outside the studio's
-          // queue (only this test) can find no file, or a locked one, for an instant. The
-          // content is still never half-written, which is what this test checks.
-          if (process.platform === "win32" && WINDOWS_RENAME_GAP.has(errorCode(error))) continue;
-          throw error;
-        }
-        JSON.parse(text);
+    const read = async (): Promise<void> => {
+      try {
+        JSON.parse(await readFile(file, "utf8"));
         reads++;
+      } catch (error) {
+        // On Windows, renaming over a file is not one step: a reader outside the queue (only
+        // this test) can find no file, or a locked one, for an instant. The content is still
+        // never half-written, which is what this test checks.
+        if (process.platform !== "win32" || !WINDOWS_RENAME_GAP.has(errorCode(error))) throw error;
       }
-    })();
-    for (let i = 0; i < 40; i++) await repo.createFolder(`Dossier ${i}`);
-    reading = false;
-    await reader;
+    };
+    const soon = (): Promise<void> => new Promise((resolve) => setImmediate(resolve));
+    for (let i = 0; i < 40; i++) {
+      // Not a read loop that never lets go: Windows refuses to rename over an open file, and the
+      // studio retries a blocked rename for ~1.5 s only. A few reads per write overlap it and
+      // end, so a blocked rename always succeeds on its next try.
+      await Promise.all([
+        repo.createFolder(`Dossier ${i}`),
+        read(),
+        soon().then(read),
+        soon().then(soon).then(read),
+      ]);
+    }
     expect(reads).toBeGreaterThan(0);
     expect((await readdir(work)).filter((name) => name.endsWith(".tmp"))).toEqual([]);
   });
