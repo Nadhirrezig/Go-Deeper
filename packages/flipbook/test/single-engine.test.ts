@@ -182,3 +182,20 @@ describe("createSingleEngine (one-page view)", () => {
     expect(options.onPage).not.toHaveBeenCalledWith(3);
   });
 });
+
+describe("createSingleEngine timing", () => {
+  it("times a turn from its frames, whatever origin they count from", () => {
+    // jsdom's frame times count from its window's creation, performance.now() from the process
+    // start (seen 0.5 s apart here, more on a slow PC): a turn must not wait for the gap.
+    const fakeRaf = window.requestAnimationFrame;
+    window.requestAnimationFrame = (callback) => fakeRaf((time) => callback(time - 5000));
+    try {
+      engine.next();
+      vi.advanceTimersByTime(1500);
+      expect(options.onPage).toHaveBeenLastCalledWith(3);
+      expect(leaf().classList.contains("vgf-page--shown")).toBe(false);
+    } finally {
+      window.requestAnimationFrame = fakeRaf;
+    }
+  });
+});

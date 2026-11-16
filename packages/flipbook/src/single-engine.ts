@@ -168,9 +168,12 @@ export async function createSingleEngine(
     active.target = target;
     const from = active.progress;
     const duration = remainingDuration(from, target);
-    const started = performance.now();
+    // Timed from the first frame's own timestamp: frame times and performance.now() can count
+    // from different origins (they do in jsdom), and mixing them stalls the turn.
+    let started: number | undefined;
     const step = (now: number): void => {
       if (destroyed || turn !== active) return;
+      started ??= now;
       const t = Math.min((now - started) / duration, 1);
       draw(from + (target - from) * ease(t));
       if (t < 1) frame = window.requestAnimationFrame(step);
