@@ -9,7 +9,8 @@ export type LibraryErrorCode =
   | "BOOK_BUSY"
   | "NOT_READY"
   | "BOOK_PUBLISHED"
-  | "NOT_PUBLISHED";
+  | "NOT_PUBLISHED"
+  | "NO_SITE";
 
 /** A rule of the library was broken. `message` is French, ready to show to the team. */
 const BRAND = Symbol.for("vipgroup.studio.LibraryError");

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { publishedSites } from "@vipgroup/shared";
 import type { BookRecord } from "@vipgroup/shared";
 import { buttonClass } from "../ui/button";
 import { DeleteBookDialog } from "./delete-book-dialog";
@@ -13,7 +14,7 @@ import { DeleteBookDialog } from "./delete-book-dialog";
 export function DeleteBookButton({ book }: { book: BookRecord }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const online = book.publishedAt !== undefined || book.publication !== undefined;
+  const online = publishedSites(book).length > 0 || book.publication !== undefined;
   return (
     <>
       <button

@@ -215,12 +215,17 @@ On the office PC it runs with Docker (above). For development, start it with `pn
   conversions can be removed there.
 - **Flipbook page** (`/flipbooks/<id>`): the reader, the details, **Télécharger le PDF** and
   **Supprimer** (removes the record and its files; refused while the book is online).
-- **Site goexperience.travel** (on the flipbook page): **Publier sur le site** uploads the book to
-  Cloudflare R2 and lists it on goexperience.travel (progress "X/Y fichiers"; the site shows it
-  within about a minute, at `/fr/flipbook/<first 8 characters of the id>`). Once online: **Voir sur
-  le site**, the link to share, and **Dépublier** (off the site's list first, then its files are
-  deleted from R2). An error is shown in French on the card; starting again is always safe. Online
-  books carry an "En ligne" badge in their folder.
+- **Publication** (on the flipbook page): one row per site, GO Experience (goexperience.travel)
+  and VIP Destinations (www.vipdestinations.fr), each with its status. **Publier…** opens a window
+  to tick one or both sites (sites where the book is already online are shown ticked and greyed);
+  the book is uploaded to each site's Cloudflare R2 bucket and listed there, one site after the
+  other (progress "X/Y fichiers", the next site shows "En attente"). Each site shows it within
+  about a minute: `/fr/flipbook/<first 8 characters of the id>` on GO Experience,
+  `/flipbook/<…>` on VIP Destinations. Once online, each row has **Voir sur le site**, the link to
+  share, and **Dépublier** (that site only: off its list first, then its files are deleted from
+  its bucket). An error is shown in French on the row of the site concerned; starting again is
+  always safe. Online books carry an "En ligne" badge in their folder ("En ligne · 2" when on both
+  sites; hover it for their names).
 
 Books converted with `pnpm convert` appear in "Général" the next time the studio starts. A
 conversion cut short by stopping the studio is shown as "Conversion interrompue".
@@ -230,22 +235,27 @@ PostgreSQL is configured: with Docker the library is in PostgreSQL), `flipbooks/
 books, served by `/files/<id>/…`) and `uploads/` (PDFs waiting for conversion, emptied as they
 finish).
 
-| Variable                                                         | Default                       | Meaning                                                   |
-| ---------------------------------------------------------------- | ----------------------------- | --------------------------------------------------------- |
-| `STORAGE_DIR`                                                    | `<repo>/storage`              | Folder for library.json, books and uploads                |
-| `FLIPBOOKS_DIR`                                                  | `<storage>/flipbooks`         | Only the converted books, elsewhere                       |
-| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`      | none                          | Cloudflare R2 token the studio publishes with (see below) |
-| `R2_BUCKET`                                                      | `goexperience`                | R2 bucket goexperience.travel reads                       |
-| `GOEXPERIENCE_URL`                                               | `https://goexperience.travel` | Site address for "Voir sur le site" and share links       |
-| `POSTGRES_PASSWORD`                                              | none (required by Docker)     | Password of the studio's PostgreSQL database              |
-| `PGHOST`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` or `DATABASE_URL` | none                          | Outside Docker: use PostgreSQL instead of library.json    |
+| Variable                                                         | Default                          | Meaning                                                   |
+| ---------------------------------------------------------------- | -------------------------------- | --------------------------------------------------------- |
+| `STORAGE_DIR`                                                    | `<repo>/storage`                 | Folder for library.json, books and uploads                |
+| `FLIPBOOKS_DIR`                                                  | `<storage>/flipbooks`            | Only the converted books, elsewhere                       |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`      | none                             | Cloudflare R2 token the studio publishes with (see below) |
+| `R2_BUCKET`                                                      | `goexperience`                   | R2 bucket goexperience.travel reads                       |
+| `R2_BUCKET_VIPDESTINATIONS`                                      | `vipdestinations`                | R2 bucket www.vipdestinations.fr reads                    |
+| `GOEXPERIENCE_URL`                                               | `https://goexperience.travel`    | Site address for "Voir sur le site" and share links       |
+| `VIPDESTINATIONS_URL`                                            | `https://www.vipdestinations.fr` | Same, for VIP Destinations                                |
+| `POSTGRES_PASSWORD`                                              | none (required by Docker)        | Password of the studio's PostgreSQL database              |
+| `PGHOST`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` or `DATABASE_URL` | none                             | Outside Docker: use PostgreSQL instead of library.json    |
 
 Set them in `.env` (see `.env.example`).
 
-**Cloudflare R2.** Published books go to `flipbooks/<id>/` in the private R2 bucket that
-goexperience.travel reads (setup: the "Cloudflare R2 setup guide" doc). The studio signs its
-requests itself (`apps/studio/lib/r2/`, no SDK) with its own token: "Object Read & Write" on the
-`goexperience` bucket only. **Publier / Dépublier** (flipbook page) use it.
+**Cloudflare R2.** Published books go to `flipbooks/<id>/` in the private R2 bucket of each site
+they are published on: `goexperience` for goexperience.travel, `vipdestinations` for
+www.vipdestinations.fr (setup: the "Cloudflare R2 setup guide" doc). Each bucket has its own
+`flipbooks/index.json`. The studio signs its requests itself (`apps/studio/lib/r2/`, no SDK) with
+its own token: "Object Read & Write" on those two buckets only. **Publier / Dépublier** (flipbook
+page) use it. Books published before VIP Destinations was added count as published on GO
+Experience.
 
 Tip: keep the repo (and so `storage/`) outside OneDrive or other synced folders — every book
 adds hundreds of image files, which slows conversion and can lock files during sync.
@@ -276,11 +286,12 @@ pnpm pack:flipbook
 ```
 
 - Builds the reader and writes `release/vipgroup-flipbook-<version>.tgz` (git-ignored here).
-- goexperience commits that file under `vendor/` and depends on
+- goexperience and the VIP Destinations site (repo `event.vip`) commit that file under `vendor/`
+  and depend on
   `"@vipgroup/flipbook": "file:vendor/vipgroup-flipbook-<version>.tgz"`. Its only dependency is
   `page-flip` (from npm); React 18 or 19 comes from the host app; the types are self-contained.
 - To ship a reader change: raise `version` in `packages/flipbook/package.json`, run
-  `pnpm pack:flipbook`, replace the file in goexperience's `vendor/` and update the dependency.
+  `pnpm pack:flipbook`, replace the file in both sites' `vendor/` and update the dependency.
 
 | Prop       | Default | Effect                                                                    |
 | ---------- | ------- | ------------------------------------------------------------------------- |

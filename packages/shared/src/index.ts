@@ -1,8 +1,14 @@
 export type { FlipbookManifest } from "./flipbook-manifest";
 export { shortBookId } from "./flipbook-index";
 export type { FlipbookIndex, FlipbookIndexEntry } from "./flipbook-index";
-export { ART_PRESET_ORDER } from "./library";
-export type { ArtPreset, BookRecord, BookStatus, Folder } from "./library";
+export {
+  ART_PRESET_ORDER,
+  isPublishSite,
+  PUBLISH_SITE_NAMES,
+  PUBLISH_SITES,
+  publishedSites,
+} from "./library";
+export type { ArtPreset, BookRecord, BookStatus, Folder, PublishSite } from "./library";
 export { MAX_PDF_BYTES, MAX_PDF_MB } from "./limits";
 export { isValidSlug, slugify, uniqueSlug } from "./slug";
 export type { WorkerJob, WorkerMessage } from "./worker-protocol";

@@ -13,7 +13,8 @@ export type R2ErrorCode =
 const MESSAGES: Record<R2ErrorCode, string> = {
   NOT_CONFIGURED:
     "La connexion à Cloudflare R2 n’est pas configurée : renseignez les variables R2_ du fichier .env.",
-  ACCESS_DENIED: "Cloudflare R2 refuse les clés : vérifiez le jeton R2 du fichier .env.",
+  ACCESS_DENIED:
+    "Cloudflare R2 refuse les clés : vérifiez que le jeton R2 du fichier .env a accès au bucket de ce site.",
   UPSTREAM: "Cloudflare R2 n’a pas pu traiter la demande. Réessayez dans un instant.",
   NETWORK: "Impossible de joindre Cloudflare R2. Vérifiez la connexion internet.",
   INVALID_BOOK: "Ce flipbook est incomplet : son manifest est absent ou illisible.",

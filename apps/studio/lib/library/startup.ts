@@ -50,7 +50,7 @@ export async function reconcileLibrary(
   }
 
   // 1b. Publications cut short by a stop. Every step of a publish or unpublish can run again,
-  // so the team only has to start it again; `publishedAt` already says where it stood.
+  // so the team only has to start it again; `sites` already says where it stood.
   for (const book of await repo.listBooks()) {
     if (!book.publication) continue;
     await repo.updateBook(book.id, {
@@ -58,6 +58,7 @@ export async function reconcileLibrary(
       publicationError: {
         code: "INTERRUPTED",
         message: PUBLICATION_INTERRUPTED_MESSAGES[book.publication.action],
+        site: book.publication.site,
       },
     });
     report.publicationsInterrupted.push(book.id);

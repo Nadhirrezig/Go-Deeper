@@ -160,8 +160,8 @@ export function libraryContract(
       const [general] = await repo.listFolders();
       await repo.createBook({ ...book("full", general!.id), pageCount: 3 });
       const published = await repo.updateBook("full", {
-        publishedAt: "2026-11-15T12:00:00.000Z",
-        publication: { action: "publish", done: 2, total: 9 },
+        sites: { vipdestinations: { publishedAt: "2026-11-15T12:00:00.000Z" } },
+        publication: { action: "publish", site: "goexperience", done: 2, total: 9 },
         error: { code: "X", message: "é « » ’" },
       });
       expect(await repo.getBook("full")).toEqual(published);

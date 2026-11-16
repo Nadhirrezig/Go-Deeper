@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { isValidSlug, slugify, uniqueSlug } from "@vipgroup/shared";
-import type { BookRecord, Folder } from "@vipgroup/shared";
+import type { BookRecord, Folder, PublishSite } from "@vipgroup/shared";
 import { deleteBook } from "../../lib/books";
 import { isLibraryError } from "../../lib/library/errors";
 import { isR2Error } from "../../lib/r2/errors";
@@ -55,18 +55,24 @@ export async function deleteBookAction(id: string): Promise<ActionResult> {
   });
 }
 
-/** "Publier": starts uploading the book to R2 and listing it on goexperience.travel. */
-export async function publishBookAction(id: string): Promise<ActionResult<BookRecord>> {
+/** "Publier": starts uploading the book to the chosen sites' R2 buckets and listing it there. */
+export async function publishBookAction(
+  id: string,
+  sites: PublishSite[],
+): Promise<ActionResult<BookRecord>> {
   const services = getServices();
   await services.ready;
-  return attempt(() => services.publisher.publish(id));
+  return attempt(() => services.publisher.publish(id, sites));
 }
 
-/** "Dépublier": starts removing the book from goexperience.travel and from R2. */
-export async function unpublishBookAction(id: string): Promise<ActionResult<BookRecord>> {
+/** "Dépublier": starts removing the book from one site and from that site's R2 bucket. */
+export async function unpublishBookAction(
+  id: string,
+  site: PublishSite,
+): Promise<ActionResult<BookRecord>> {
   const services = getServices();
   await services.ready;
-  return attempt(() => services.publisher.unpublish(id));
+  return attempt(() => services.publisher.unpublish(id, site));
 }
 
 /**

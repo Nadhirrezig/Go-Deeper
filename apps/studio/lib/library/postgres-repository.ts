@@ -6,7 +6,13 @@ import type { Pool, PoolClient } from "pg";
 import { readFileIfExists } from "./atomic-file";
 import { LibraryError } from "./errors";
 import { LIBRARY_LOCK } from "./postgres-schema";
-import { checkFolderName, checkSlug, DEFAULT_FOLDER_NAME, newestFirst } from "./repository";
+import {
+  checkFolderName,
+  checkSlug,
+  DEFAULT_FOLDER_NAME,
+  newestFirst,
+  upgradeBookRecord,
+} from "./repository";
 import type { BookPatch, LibraryRepository, NewBook } from "./repository";
 
 export interface PostgresRepositoryOptions {
@@ -119,7 +125,7 @@ export class PostgresLibraryRepository implements LibraryRepository {
           [filter.folderId],
         )
       : await this.pool.query<{ record: BookRecord }>("SELECT record FROM books");
-    return rows.map((row) => row.record).sort(newestFirst);
+    return rows.map((row) => upgradeBookRecord(row.record)).sort(newestFirst);
   }
 
   async getBook(id: string): Promise<BookRecord | null> {
@@ -127,7 +133,7 @@ export class PostgresLibraryRepository implements LibraryRepository {
       "SELECT record FROM books WHERE id = $1",
       [id],
     );
-    return rows[0]?.record ?? null;
+    return rows[0] ? upgradeBookRecord(rows[0].record) : null;
   }
 
   createBook(input: NewBook): Promise<BookRecord> {
@@ -149,7 +155,7 @@ export class PostgresLibraryRepository implements LibraryRepository {
         "SELECT record FROM books WHERE id = $1",
         [id],
       );
-      const current = rows[0]?.record;
+      const current = rows[0] && upgradeBookRecord(rows[0].record);
       if (!current) throw notFound("Ce flipbook n’existe plus.");
       if (patch.slug !== undefined && patch.slug !== current.slug) {
         checkSlug(patch.slug, await this.slugRows(client), id);
@@ -201,7 +207,7 @@ export class PostgresLibraryRepository implements LibraryRepository {
           [folder.id, folder.name, folder.art, folder.createdAt],
         );
       }
-      for (const book of books) await this.insertBook(client, clean(book));
+      for (const book of books) await this.insertBook(client, clean(upgradeBookRecord(book)));
       await client.query("UPDATE library_state SET next_art = $1 WHERE id = 1", [
         data.nextArt ?? folders.length,
       ]);

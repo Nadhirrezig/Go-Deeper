@@ -1,10 +1,11 @@
+import { publishedSites } from "@vipgroup/shared";
 import { removeBookFolder } from "./library/book-files";
 import { LibraryError } from "./library/errors";
 import type { LibraryRepository } from "./library/repository";
 
 /**
  * Remove a book: its record and its folder on disk. Refused while it is converting, being
- * published, or online (it must be unpublished first, so R2 keeps no orphan files).
+ * published, or online on any site (it must be unpublished first, so R2 keeps no orphan files).
  */
 export async function deleteBook(
   repo: LibraryRepository,
@@ -25,10 +26,10 @@ export async function deleteBook(
       "Une publication de ce flipbook est en cours : attendez la fin pour le supprimer.",
     );
   }
-  if (book.publishedAt) {
+  if (publishedSites(book).length > 0) {
     throw new LibraryError(
       "BOOK_PUBLISHED",
-      "Ce flipbook est en ligne : dépubliez-le avant de le supprimer.",
+      "Ce flipbook est en ligne : dépubliez-le de chaque site avant de le supprimer.",
     );
   }
   await repo.deleteBook(id);

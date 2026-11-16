@@ -29,6 +29,7 @@ A Heyzine-style tool: the team uploads a PDF, the app converts it into a page-fl
 | 4 | Reader: PDF download + in-book search |
 | 5 | Studio: home, folders, upload + progress, folder and flipbook pages |
 | 6 | Link the studio to goexperience.travel: sub-steps S1–S9 below, in this order |
+| 7 | A second site, VIP Destinations (www.vipdestinations.fr), and publishing per site: sub-steps V1–V7 below |
 | Later | Branding per book · Interactive pages (links, hotspots, video, table of contents) · Sharing & protection (page links, embed code, password, stats; the share button is done in S4) |
 
 Steps 1–5 are done. Step 6 runs website-first: goexperience learns to read books, it is tested on a
@@ -66,6 +67,69 @@ Decisions taken for step 6:
   `/flipbook`, newest first. The slug is no longer in the URL; it names the PDF download.
 - **Sharing:** the book page's "Partager" button shares `https://goexperience.travel/flipbook/<short id>`
   (no locale): share sheet on phones, copy + "Lien copié" on computers.
+
+## Step 7 — VIP Destinations site and publishing per site
+
+Same flow as step 6: the website learns to read books first, is tested on a book copied by hand,
+then the studio learns to publish to it.
+
+| Sub-step | Repo | Content |
+| --- | --- | --- |
+| V1 | event.vip | vitest · `/api/r2` serves `flipbooks/<id>/…` (`.json`, `.webp`, `.pdf`) as on goexperience; photos unchanged |
+| V2 | event.vip | Install the `.tgz` · `src/lib/flipbooks.ts` reads `flipbooks/index.json` from the `vipdestinations` bucket |
+| V3 | event.vip | Book page `/flipbook/<short id>` (metadata, 404, "Partager") · collection page `/flipbook` |
+| ‖ | Nadhir | The studio's R2 token also writes `vipdestinations` · one test book copied there by hand, `index.json` by hand |
+| V4 | test | V1–V3 on that book (local, then a Vercel preview) |
+| V5 | Go-Deeper | Two sites in the studio: each book has its own publication state per site (existing ones = GO Experience) |
+| V6 | Go-Deeper | "Publier" opens a window to tick one or both sites; status, "Voir sur le site" and "Dépublier" per site |
+| V7 | test | End to end on both sites |
+
+Decisions taken for step 7:
+- **Repo:** `Nadhirrezig/event.vip` (package `vip-events`), Next.js 16 + next-intl on Vercel. The
+  language comes from the `NEXT_LOCALE` cookie: URLs have no locale.
+- **Books:** each site shows its own books. VIP Destinations books go to the `vipdestinations`
+  bucket (the one the site already reads photos from), same layout as goexperience
+  (`flipbooks/<id>/` + `flipbooks/index.json`, same contracts as below).
+- **Addresses:** `/flipbook/<short id>` (first 8 characters of the id; a full id redirects to the
+  short one), all books at `/flipbook`, newest first. No header link (as on goexperience).
+- **Sharing:** "Partager" shares `https://www.vipdestinations.fr/flipbook/<short id>`.
+- **Studio:** "Publier" opens a window listing GO Experience and VIP Destinations; one or both can
+  be ticked. Each site has its own status, "Voir sur le site" and "Dépublier".
+- **Tests:** event.vip gets vitest (dev dependency), like goexperience.
+- Done in V1: `src/lib/r2-objects.ts` decides what `/api/r2` serves. Photos are any key outside
+  `flipbooks/` with an image extension, cached as before (`max-age=86400,
+  stale-while-revalidate=604800`); flipbook rules and headers are goexperience's. `vitest.config.ts`,
+  `pnpm test`. event.vip's `pnpm lint` already failed before V1: ESLint is not installed there.
+- Done in V2: `vendor/vipgroup-flipbook-0.1.0.tgz` (the file goexperience uses);
+  `src/lib/flipbook-index.ts` (parsing, short ids, `/flipbook/<short id>` paths, `/api/r2` file
+  URLs) and `src/lib/flipbooks.ts` (signed GET of `flipbooks/index.json`, `unstable_cache` 60 s,
+  React `cache()` per request), as on goexperience; `hasR2Credentials()` in `src/lib/r2.ts`.
+- Done in V3: `src/app/flipbook/[id]/page.tsx` (`force-dynamic`; full id → 308 to the short id;
+  title "<title> | VIP EVENTS", canonical `https://www.vipdestinations.fr/flipbook/<short id>`;
+  `labelsEn` when the cookie says English) and `src/app/flipbook/page.tsx` (newest first);
+  `src/components/flipbook/` (card, Partager); `src/lib/site.ts` (`SITE_URL`, fixed, no env var);
+  texts in `src/messages/{fr,en}.json` (`flipbook`, `metadata.flipbook(s)`). The root layout's
+  header is solid on these pages and reserves its own height. The site brands itself "VIP EVENTS"
+  and its `openGraph.url` is still `https://vip-events.com` (left as is).
+- Done in V5: `PUBLISH_SITES` / `PublishSite` / `publishedSites()` in `packages/shared`.
+  `BookRecord.sites` (`{ goexperience?: { publishedAt }, vipdestinations?: { publishedAt } }`)
+  replaces `publishedAt`; `publication` and `publicationError` carry their `site`.
+  `upgradeBookRecord` (lib/library/repository.ts) reads an old record (`publishedAt`, no site) as
+  GO Experience; both repositories pass every record through it, so no migration: a record is
+  rewritten in the new shape on its next change. `lib/publish/sites.ts`: name, address, bucket and
+  page path per site (`R2_BUCKET`, `R2_BUCKET_VIPDESTINATIONS`, `GOEXPERIENCE_URL`,
+  `VIPDESTINATIONS_URL`). `Publisher.publish(id, sites)` runs the chosen sites one after the
+  other (PUBLISH_SITES order) in one background operation and stops at the first failure (sites
+  done before stay online); `unpublish(id, site)`; clashes are checked against each site's own
+  `index.json`. Deleting a book is refused while it is online on any site.
+- Done in V6: `components/books/publish-panel.tsx`, the "Publication" card: one row per site
+  (status with a coloured dot, progress, share link, "Voir sur le site", "Dépublier" with its own
+  confirmation); "Publier…" (off while busy, before the conversion ends, or when the book is on
+  every site) opens a window with one checkbox per site (the first site not yet online is ticked;
+  online sites are ticked and disabled). `publication.waiting` lists the sites a publish will do
+  next, so their rows say "En attente". `PUBLISH_SITE_NAMES` in `packages/shared`; the folder
+  card's badge reads "En ligne · 2" on both sites and names them. R2's ACCESS_DENIED message now
+  points at the token's access to the site's bucket.
 
 ## Architecture
 
